@@ -6,7 +6,7 @@
 
 
 using namespace std;
-
+void printUsage();
 void printUsage()
 {
 	cout << "USAGE: Elevator <Number of people> <Number of floors>" << endl;
@@ -26,8 +26,7 @@ int main(int argc, char* argv[])
 	Elevator elevator;
 	
 	// Construct the Person objects
-	List personList;
-	
+	//List personList;
 	
 	
 	

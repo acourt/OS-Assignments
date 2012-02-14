@@ -1,11 +1,10 @@
-
-
+#include "Person.h"
 
 Person::Person(Elevator * elevator)
 {
-	this.elevator = elevator;
-	this.currentFloor = rand() % NUM_FLOORS;
-	this.personID = PersonCount++;
+	this->elevator = elevator;
+	this->currentFloor = rand() % NUM_FLOORS;
+	this->personID = PersonCount++;
 }
 
 Person::~Person()
@@ -15,7 +14,7 @@ Person::~Person()
 
 void Person::StartWorking()
 {
-	pthread_create(&personThread, NULL, &Work, NULL);
+	pthread_create(&personThread, NULL, &(Person::Work), NULL);
 }
 
 void Person::Work()
@@ -39,7 +38,7 @@ void Person::Work()
 			
 		}
 		
-		tickUntilUseElevator--;
+		ticksUntilUseElevator--;
 		
 		pthread_mutex_unlock(&dummy_mutex);
 		

@@ -1,9 +1,10 @@
 #ifndef _PERSON_H_
 #define _PERSON_H_
 
-#define NUM_FLOORS
+#define NUM_FLOORS 10
 
 #include <pthread.h>
+#include <stdlib.h>
 
 #include "Elevator.h"
 
@@ -16,13 +17,13 @@ class Person {
 	
 	public:
 	
-		Person();
+		Person(Elevator * elevator);
 		~Person();
 		
 		pthread_t personThread;
 		
 		void StartWorking();
-		
+        void Word();
 	private:
 		Elevator * elevator;
 		int currentFloor;

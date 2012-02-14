@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <iostream>
+#include <pthread.h>
 #include "Elevator.h"
+#include "Person.h"
+
 
 using namespace std;
 
@@ -20,8 +23,13 @@ int main(int argc, char* argv[])
 	}
 	
 	// Construct the Elevator object
+	Elevator elevator;
 	
-	// Construct the people objects
+	// Construct the Person objects
+	List personList;
+	
+	
+	
 	
 	// Start Simulation
 	

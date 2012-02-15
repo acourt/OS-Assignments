@@ -14,7 +14,8 @@ void Person_Start(struct Person* person)
 
 void* Person_Work(void* person)
 {
-    person = (struct Person*) person;
+    struct Person *working_person = (struct Person*) person;
+    
     pthread_mutex_t dummy_mutex;
 	pthread_mutex_init(&dummy_mutex, NULL);
 	
@@ -22,23 +23,21 @@ void* Person_Work(void* person)
 	{
 		pthread_mutex_lock(&dummy_mutex);
 		// Wait for clock pulse
-		pthread_cond_wait(&(elevator->cond_clock_notify), &dummy_mutex);
+		pthread_cond_wait( &cond_clock_notify, &dummy_mutex);
 		
 		// Tick has occured
-		if(person->ticksUntilUseElevator == 0) {
+		if(working_person->ticks_until_use_elevator == 0) {
 			// Generate next destination
 			int destination = rand() % NUM_FLOORS;
-			person->elevator->Request(destination);
+            ElevatorRequest(working_person, destination);
 		}
 		else {
 			
 		}
 		
-		person->ticksUntilUseElevator--;
+		working_person->ticks_until_use_elevator--;
 		
 		pthread_mutex_unlock(&dummy_mutex);
 		
 	}
-}
-    return NULL;
 }

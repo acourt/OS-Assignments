@@ -3,7 +3,7 @@
 //  Elevator
 //
 //  Created by Alexandre Courtemanche on 12-02-14.
-//  Copyright 2012 __MyCompanyName__. All rights reserved.
+//  Copyright 2012 McGill University. All rights reserved.
 //
 
 #include <stdio.h>
@@ -18,7 +18,9 @@ void printUsage()
 }
 
 // Construct the Elevator object
-static struct Elevator elevator;
+struct Elevator elevator;
+pthread_cond_t cond_clock_notify = PTHREAD_COND_INITIALIZER;
+
 
 int main (int argc, const char * argv[])
 {

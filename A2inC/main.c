@@ -35,9 +35,9 @@ int main (int argc, const char * argv[])
     
     
 	Elevator_Init();
-    /*struct Person person;
+    Person person;
     Person_Init(&person);
-	Person_Start(&person);*/
+	Person_Start(&person);
     
 	// Construct the Person objects
 	//List personList;

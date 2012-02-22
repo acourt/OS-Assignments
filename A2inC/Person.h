@@ -9,7 +9,7 @@
 #include "Elevator.h"
 
 
-static int person_count = 0;
+
 extern struct Elevator elevator;
 
 
@@ -20,9 +20,10 @@ struct Person {
     
     pthread_t person_thread;
 };
+typedef struct Person Person;
 
-void Person_Init(struct Person* person);
-void Person_Start(struct Person* person);
+void Person_Init(Person* person);
+void Person_Start(Person* person);
 void *Person_Work(void* person);
 
 #endif // _PERSON_H_

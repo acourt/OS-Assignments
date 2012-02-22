@@ -23,12 +23,14 @@ int ElevatorRequest(struct Person * person, int destination)
     if (elevator.position <= destination) {
         // Wait for the upsweep to take me to destination
         while (elevator.position < destination) {
+            printf("Person: %d Destination: %d Waiting on the upsweep.\n", person->ID, destination);
             pthread_cond_wait(&cond_upsweep, &(elevator.elevator_mutex));
         }
     }
     else{
         while (elevator.position > destination) {
-            pthread_cond_wait(&cond_upsweep, &(elevator.elevator_mutex));
+            printf("Person: %d Destination: %d  Waiting on the downsweep.\n", person->ID, destination);
+            pthread_cond_wait(&cond_downsweep, &(elevator.elevator_mutex));
         }
     }
     pthread_mutex_unlock(&(elevator.elevator_mutex));

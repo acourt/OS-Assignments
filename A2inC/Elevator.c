@@ -52,7 +52,7 @@ void* ClockRun(void * dummyParam)
 {
     for(;;) {
         // Clock cycle
-        printf("Elevator Position: %d, Direction: %d", elevator.position, elevator.direction);
+        printf("Elevator Position: %d, Direction: %d\n", elevator.position, elevator.direction);
         pthread_cond_broadcast(&cond_clock_notify);
         if (elevator.direction == UP) {
             pthread_cond_broadcast(&cond_upsweep);

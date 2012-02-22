@@ -3,6 +3,7 @@
 void Person_Init(struct Person* person)
 {
     person->ID = person_count++;
+    person->ticks_until_use_elevator = rand() % NUM_FLOORS;
     person->current_floor = rand() % NUM_FLOORS;
 }
 
@@ -29,15 +30,15 @@ void* Person_Work(void* person)
 		if(working_person->ticks_until_use_elevator == 0) {
 			// Generate next destination
 			int destination = rand() % NUM_FLOORS;
-            ElevatorRequest(working_person, destination);
+            working_person->current_floor = ElevatorRequest(working_person, destination);
+            ElevatorRelease(working_person);
+            working_person->ticks_until_use_elevator = rand() % NUM_FLOORS;
 		}
 		else {
-			
+            printf("Person %d: Ticks left before use elevator: %d", working_person->ID, working_person->ticks_until_use_elevator);
+			working_person->ticks_until_use_elevator--;
 		}
 		
-		working_person->ticks_until_use_elevator--;
-		
 		pthread_mutex_unlock(&dummy_mutex);
-		
 	}
 }

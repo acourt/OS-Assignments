@@ -41,7 +41,7 @@ int ElevatorRequest( Person * person, int destination)
     
     // Wait for the elevator to come to you.
     while (elevator.position != person->current_floor) {
-        printf("Person: %d Destination: %d Waiting for elevator.\n", person->ID, destination);
+        printf("Person: %d Position: %d Destination: %d Waiting for elevator.\n", person->ID, person->current_floor, destination);
         pthread_cond_wait(&cond_clock_notify, &(elevator.elevator_mutex));
     }
     
@@ -66,7 +66,7 @@ int ElevatorRequest( Person * person, int destination)
         elevator.downsweep_count++;
         
         // If the elevator doesn't go far enough to reach my destination
-        if (elevator.downsweep_final_dest < destination) {
+        if (elevator.downsweep_final_dest > destination) {
             elevator.downsweep_final_dest = destination;
         }
         

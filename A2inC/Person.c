@@ -35,7 +35,7 @@ void* Person_Work(void* arg)
             working_person->ticks_until_use_elevator = (rand() % NUM_FLOORS);
 		}
 		else {
-            printf("Person %d: Ticks left before use elevator: %d\n", working_person->ID, working_person->ticks_until_use_elevator);
+            printf("Person %d; Position: %d; Ticks: %d;\n", working_person->ID, working_person->current_floor, working_person->ticks_until_use_elevator);
 			working_person->ticks_until_use_elevator--;
 		}
 		

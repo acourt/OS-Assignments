@@ -7,7 +7,14 @@ int Elevator_Init()
 {
     elevator.position = 0;
     elevator.clockPeriod = 1;
-    elevator.direction = UP;
+    elevator.direction = IDLE;
+    
+    elevator.upsweep_final_dest = NONE;
+    elevator.downsweep_final_dest = NONE;
+    
+    elevator.upsweep_count = 0;
+    elevator.downsweep_count = 0;
+    
     pthread_mutex_init(&(elevator.elevator_mutex), NULL);
     pthread_create(&(elevator.clockThread), NULL, &ClockRun, NULL);
     
@@ -15,46 +22,79 @@ int Elevator_Init()
 }
 
 
-int ElevatorRequest(struct Person * person, int destination)
+int ElevatorRequest( Person * person, int destination)
 {
     pthread_mutex_lock(&(elevator.elevator_mutex));
-	
-    // If my destination if up and the elevator is not there yet
-    if (elevator.position <= destination) {
+    
+    // Adjust the elevator's destination so that I can get picked up
+    if (elevator.position < person->current_floor && // If I'm above the elevator
+        0 <= elevator.upsweep_final_dest < person->current_floor) // If the elevator isn't going up enough to get me
+    {
+        elevator.upsweep_final_dest = person->current_floor;
+    }
+    else if(elevator.position > person->current_floor && // If I'm below the elevator
+            elevator.downsweep_final_dest > person->current_floor) // If the elevator isn't going down enough to get me
+    {
+        elevator.downsweep_final_dest = person->current_floor;
+    }
+    
+    
+    // Wait for the elevator to come to you.
+    while (elevator.position != person->current_floor) {
+        printf("Person: %d Destination: %d Waiting for elevator.\n", person->ID, destination);
+        pthread_cond_wait(&cond_clock_notify, &(elevator.elevator_mutex));
+    }
+    
+    // If my destination is up and the elevator is not there yet
+    if (elevator.position < destination) {
+        elevator.upsweep_count++;
+        
+        // If the elevator doesn't go far enough to reach my destination
+        if (elevator.upsweep_final_dest < destination) {
+            elevator.upsweep_final_dest = destination;
+        }
+        
         // Wait for the upsweep to take me to destination
+        printf("Person: %d Destination: %d Waiting on the upsweep.\n", person->ID, destination);
         while (elevator.position < destination) {
-            printf("Person: %d Destination: %d Waiting on the upsweep.\n", person->ID, destination);
             pthread_cond_wait(&cond_upsweep, &(elevator.elevator_mutex));
+            printf("Person: %d Destination: %d  Upsweeping.\n", person->ID, destination);
         }
+        elevator.upsweep_count--;
     }
-    else{
+    else if(elevator.position > destination){
+        elevator.downsweep_count++;
+        
+        // If the elevator doesn't go far enough to reach my destination
+        if (elevator.downsweep_final_dest < destination) {
+            elevator.downsweep_final_dest = destination;
+        }
+        
+        // Wait for the upsweep to take me to destination
+        printf("Person: %d Destination: %d  Waiting on the downsweep.\n", person->ID, destination);
         while (elevator.position > destination) {
-            printf("Person: %d Destination: %d  Waiting on the downsweep.\n", person->ID, destination);
             pthread_cond_wait(&cond_downsweep, &(elevator.elevator_mutex));
+            printf("Person: %d Destination: %d  Downsweeping.\n", person->ID, destination);
         }
+        elevator.downsweep_count--;
     }
+    
     pthread_mutex_unlock(&(elevator.elevator_mutex));
     return destination;
 }
-void ElevatorRelease(struct Person * person)
+
+void ElevatorRelease( Person * person)
 {
     
 }
 
-// Clock methods
-void StartClock()
-{
-    
-}
-void AddToNotifyList(struct Person * person)
-{
-    
-}
+
 void* ClockRun(void * dummyParam)
 {
     for(;;) {
         // Clock cycle
-        printf("Elevator Position: %d, Direction: %d\n", elevator.position, elevator.direction);
+        printf("Elevator Position: %d, Direction: %d upsweepFinal: %d downsweepFinal: %d\n", elevator.position, elevator.direction, 
+               elevator.upsweep_final_dest, elevator.downsweep_final_dest);
         pthread_cond_broadcast(&cond_clock_notify);
         if (elevator.direction == UP) {
             pthread_cond_broadcast(&cond_upsweep);
@@ -64,25 +104,52 @@ void* ClockRun(void * dummyParam)
         
 		sleep(elevator.clockPeriod);
         
-        // Update the elevator's position
-		if(elevator.direction == UP)
-        {
-            // If at the top of the building, change to downsweep mode
-            if (elevator.position == NUM_FLOORS -1) {
-                elevator.direction = DOWN;
-            }
-            else
-                elevator.position++;
-        }
-        else {
-            // If at the bottom floor, change to upsweep mode
-            if (elevator.position == 0) {
+        // Check if there are any requests while idle
+        if (elevator.direction == IDLE) {
+            if (elevator.upsweep_final_dest != NONE) {
                 elevator.direction = UP;
             }
-            else
-                elevator.position--;
+            else if(elevator.downsweep_final_dest != NONE) {
+                elevator.direction = DOWN;
+            }
         }
-	}
+        
+        // Perform sweeping
+        if (elevator.direction == UP) {
+            if (elevator.position < elevator.upsweep_final_dest) {
+                elevator.position++;
+            }
+            else if(elevator.position == elevator.upsweep_final_dest) {
+                // Clear the final destination for upsweep
+                elevator.upsweep_final_dest = NONE;
+                // Check if there are any requests for downsweep
+                if (elevator.downsweep_final_dest != NONE) {
+                    elevator.direction = DOWN;
+                }
+                else {
+                    elevator.direction = IDLE;
+                }
+            }
+        }
+        else if(elevator.direction == DOWN) {
+            if (elevator.position > elevator.downsweep_final_dest) {
+                elevator.position--;
+            }
+            else if(elevator.position == elevator.downsweep_final_dest) {
+                // Clear the final destination for downsweep
+                elevator.downsweep_final_dest = NONE;
+                // Check if there are any requests for upsweep
+                if (elevator.upsweep_final_dest != NONE) {
+                    elevator.direction = DOWN;
+                }
+                else {
+                    elevator.direction = IDLE;
+                }
+            }
+            
+        }
+        
+    } // for(;;)
 }
 
 

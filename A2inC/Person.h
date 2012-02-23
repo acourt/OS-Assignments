@@ -13,14 +13,14 @@
 extern struct Elevator elevator;
 
 
-struct Person {
+typedef struct  {
     int current_floor;
     int ticks_until_use_elevator;
     int ID;
     
     pthread_t person_thread;
-};
-typedef struct Person Person;
+} Person;
+//typedef struct Person Person;
 
 void Person_Init(Person* person);
 void Person_Start(Person* person);

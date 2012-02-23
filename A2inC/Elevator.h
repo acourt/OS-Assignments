@@ -10,6 +10,10 @@
 // Elevator directions
 #define UP 1
 #define DOWN 0
+#define IDLE -1
+
+// Elevator destination
+#define NONE -1
 
 extern struct Elevator elevator;
 extern pthread_cond_t cond_clock_notify;
@@ -20,18 +24,24 @@ struct Elevator {
     int position;
     int clockPeriod;
     int direction;
+    int upsweep_final_dest;
+    int downsweep_final_dest;
+    
+    int upsweep_count;
+    int downsweep_count;
+    
     pthread_t clockThread;
     pthread_mutex_t elevator_mutex;
     
 };
 
 int Elevator_Init();
-int ElevatorRequest(struct Person * person, int destination);
-void ElevatorRelease(struct Person * person);
+/*int ElevatorRequest( Person * person, int destination);
+void ElevatorRelease( Person * person);*/
 
 // Clock methods
 void StartClock();
-void AddToNotifyList(struct Person * person);
+//void AddToNotifyList(Person * person);
 void* ClockRun(void *);
 
 

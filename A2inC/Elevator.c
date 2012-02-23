@@ -51,6 +51,7 @@ int ElevatorRequest( Person * person, int destination)
         
         // If the elevator doesn't go far enough to reach my destination
         if (elevator.upsweep_final_dest < destination) {
+            //printf("upsweep_final_dest: %d", elevator.upsweep_final_dest);
             elevator.upsweep_final_dest = destination;
         }
         
@@ -66,7 +67,9 @@ int ElevatorRequest( Person * person, int destination)
         elevator.downsweep_count++;
         
         // If the elevator doesn't go far enough to reach my destination
-        if (elevator.downsweep_final_dest > destination) {
+        if (elevator.downsweep_final_dest > destination ||
+            elevator.downsweep_final_dest == NONE) {
+            //printf("downsweep_final_dest: %d", elevator.downsweep_final_dest);
             elevator.downsweep_final_dest = destination;
         }
         

@@ -45,6 +45,7 @@ int main (int argc, const char * argv[])
         Person_Init(persons[i]);
     }
     for (i=0; i< NUM_PERSONS; i++) {
+        printf("Starting person %d",i);
         Person_Start(persons[i]);
     }
     

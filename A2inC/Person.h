@@ -11,7 +11,7 @@
 
 
 extern struct Elevator elevator;
-
+extern pthread_mutex_t person_lock;
 
 typedef struct  {
     int current_floor;

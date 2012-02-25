@@ -26,6 +26,9 @@ pthread_cond_t cond_clock_notify = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_upsweep = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_downsweep = PTHREAD_COND_INITIALIZER;
 
+// Person mutex
+pthread_mutex_t person_lock;
+
 
 Person* persons[50];
 
@@ -49,6 +52,7 @@ int main (int argc, const char * argv[])
         Person_Start(persons[i]);
     }
     
+    pthread_mutex_init(&person_lock, NULL);
     
     /*Person person;
     Person_Init(&person);

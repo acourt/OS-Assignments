@@ -100,13 +100,17 @@ void* ClockRun(void * dummyParam)
                elevator.upsweep_final_dest, elevator.downsweep_final_dest);
         pthread_cond_broadcast(&cond_clock_notify);
         if (elevator.direction == UP) {
+            printf("Broadcasting upsweep\n");
             pthread_cond_broadcast(&cond_upsweep);
         }
-        else
+        else if(elevator.direction == DOWN){
+            printf("Broadcasting downsweep\n");
             pthread_cond_broadcast(&cond_downsweep);
-        
+        }
 		sleep(elevator.clockPeriod);
-        
+        int prompt = 0;
+        printf("Enter a clock pulse\n");
+        scanf("%d", &prompt);
         // Check if there are any requests while idle
         if (elevator.direction == IDLE) {
             if (elevator.upsweep_final_dest != NONE) {

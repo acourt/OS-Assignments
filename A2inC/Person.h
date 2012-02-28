@@ -1,8 +1,6 @@
 #ifndef _PERSON_H_
 #define _PERSON_H_
 
-#define NUM_FLOORS 10
-
 #include <pthread.h>
 #include <stdlib.h>
 

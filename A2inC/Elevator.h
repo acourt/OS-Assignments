@@ -27,12 +27,14 @@ extern pthread_cond_t cond_clock_notify;
 extern pthread_cond_t cond_upsweep;
 extern pthread_cond_t cond_downsweep;
 extern pthread_cond_t cond_request;
+extern pthread_cond_t cond_full_elevator;
 
+extern int NUM_FLOORS;
 extern int print_level;
 extern int* elevator_riders_pointer;
 extern int* elevator_rider_ids;
 extern int clock_ticks;
-
+extern int MAX_CAPACITY;
 
 struct Elevator {
     int position;
@@ -43,14 +45,15 @@ struct Elevator {
     int upsweep_count;
     int downsweep_count;
     
+    int person_count;
+    int maximum_capacity;
+    
     pthread_t clockThread;
     pthread_mutex_t elevator_mutex;
     
 };
 
 int Elevator_Init();
-/*int ElevatorRequest( Person * person, int destination);
-void ElevatorRelease( Person * person);*/
 
 // Clock methods
 void StartClock();

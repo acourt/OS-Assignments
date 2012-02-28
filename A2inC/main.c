@@ -10,17 +10,16 @@
 #include "Person.h"
 #include "Elevator.h"
 
-#define NUM_PERSONS 3
-
-
-int print_level = 2;
+int NUM_PERSONS = 0;
+int MAX_CAPACITY = 0;
+int print_level = 0;
 int clock_ticks = 0;
-
+int NUM_FLOORS = 1;
 
 void printUsage();
 void printUsage()
 {
-    printf("USAGE: Elevator <Number of people> <Number of floors>");
+    printf("USAGE: Elevator <Number of people> <Number of floors> <Print Level> <Maximum Capacity>");
     printf("Optional argument: -v <Level of verbosity>");
 }
 
@@ -30,7 +29,7 @@ pthread_cond_t cond_clock_notify = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_request = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_upsweep = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_downsweep = PTHREAD_COND_INITIALIZER;
-
+pthread_cond_t cond_full_elevator = PTHREAD_COND_INITIALIZER;
 // Person mutex
 pthread_mutex_t person_lock;
 
@@ -44,11 +43,15 @@ int main (int argc, const char * argv[])
 {
     int i;
     // Check that the input of the program is correct
-	/*if(argc < 2)	
+	if(argc < 5)	
 	{
 		printUsage();
 		exit(-1);
-	}*/
+	}
+    NUM_PERSONS = atoi(argv[1]);
+    NUM_FLOORS = atoi(argv[2]);
+    print_level = atoi(argv[3]);
+    MAX_CAPACITY = atoi(argv[4]);
     
     int elevator_ids[ELEVATOR_RIDERS_STORAGE_SPACE];
     elevator_rider_ids = elevator_ids;
@@ -58,25 +61,22 @@ int main (int argc, const char * argv[])
     pthread_cond_init(&cond_request, NULL);
     pthread_cond_init(&cond_upsweep, NULL);
     pthread_cond_init(&cond_downsweep, NULL);
+    pthread_cond_init(&cond_full_elevator, NULL);
     
+    // Construct the Person objects
     pthread_mutex_init(&person_lock, NULL);
     for (i=0; i< NUM_PERSONS; i++) {
         persons[i] = malloc(sizeof(Person));
         Person_Init(persons[i]);
     }
     for (i=0; i< NUM_PERSONS; i++) {
-        printf("Starting person %d",i);
+        printf("Starting person %d\n",i);
         Person_Start(persons[i]);
     }
     
+    // Start Simulation
     Elevator_Init();
     
-    /*Person person;
-    Person_Init(&person);
-	Person_Start(&person);*/
-    
-	// Construct the Person objects
-	//List personList;
 	while (1) {
         
     }
@@ -86,7 +86,7 @@ int main (int argc, const char * argv[])
     }	
     
     
-	// Start Simulation
+	
 	
 	return 0;
 }

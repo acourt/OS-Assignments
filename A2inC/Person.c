@@ -6,7 +6,7 @@ int person_count = 0;
 void Person_Init(Person* person)
 {
     person->ID = person_count++;
-    person->ticks_until_use_elevator = 5/*(rand() % NUM_FLOORS)*/;
+    person->ticks_until_use_elevator = (rand() % NUM_FLOORS);
     person->current_floor = (rand() % NUM_FLOORS);
 }
 
@@ -36,11 +36,10 @@ void* Person_Work(void* arg)
 			    printf("Person %d requesting elevator from floor ", working_person->ID); 
             working_person->current_floor = ElevatorRequest(working_person, destination);
             ElevatorRelease(working_person);
-            working_person->ticks_until_use_elevator = /*(rand() % NUM_FLOORS)*/ 5;
+            working_person->ticks_until_use_elevator = (rand() % NUM_FLOORS);
 		}
 		else {
-            //printf("Person %d; Position: %d; Ticks: %d;\n", working_person->ID, working_person->current_floor, working_person->ticks_until_use_elevator);
-			working_person->ticks_until_use_elevator--;
+ 			working_person->ticks_until_use_elevator--;
 		}
 	}
 }

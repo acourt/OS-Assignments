@@ -3,11 +3,13 @@
 /* Since the elevator is a singleton, we don't need to take in the pointer to the struct as a parameter */
 
 
-int Elevator_Init()
+int Elevator_Init(int numfloors, int max_capacity)
 {
     elevator.position = 0;
     elevator.clockPeriod = 1;
     elevator.direction = IDLE;
+    elevator.maximum_capacity = max_capacity;
+    elevator.num_floors = numfloors;
     
     elevator.person_count = 0;
     
@@ -29,7 +31,7 @@ int ElevatorRequest( Person * person, int destination)
     pthread_mutex_lock(&(elevator.elevator_mutex));
     
     // Wait for the elevator to come to you.
-    while (elevator.person_count >= MAX_CAPACITY) {
+    while (elevator.person_count >= elevator.maximum_capacity) {
         printf("Person: %d Position: %d Destination: %d MAX_CAPACITY < %d.\n", person->ID, person->current_floor, destination, elevator.person_count);
         pthread_cond_wait(&cond_full_elevator, &(elevator.elevator_mutex));
     }
@@ -109,9 +111,7 @@ void* ClockRun(void * dummyParam)
 {
     // Clock Cycle
     for(;;) {
-        
-        
-        
+
         // Broadcast clock pulses to all listening threads
         printf("Elevator Position: %d, Direction: %d upsweepFinal: %d downsweepFinal: %d\n", elevator.position, elevator.direction, 
                elevator.upsweep_final_dest, elevator.downsweep_final_dest);
@@ -120,22 +120,12 @@ void* ClockRun(void * dummyParam)
         pthread_cond_broadcast(&cond_downsweep);
         pthread_cond_broadcast(&cond_request);
         pthread_cond_broadcast(&cond_full_elevator);
-        /*if (elevator.direction == UP) {
-            printf("Broadcasting upsweep\n");
-            pthread_cond_broadcast(&cond_upsweep);
-        }
-        else if(elevator.direction == DOWN){
-            printf("Broadcasting downsweep\n");
-            pthread_cond_broadcast(&cond_downsweep);
-        }*/
-        
-        
+
         
         // Give time for the threads to execute what they need
 		sleep(elevator.clockPeriod);
         //int prompt = 0;
-        printf("Clock pulse done\n");
-        //scanf("%d", &prompt);
+        printf("Tick\n");
         
         
         

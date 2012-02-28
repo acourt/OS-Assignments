@@ -1,14 +1,11 @@
 #ifndef _PERSON_H_
 #define _PERSON_H_
 
-#define NUM_FLOORS 10
 
 #include <pthread.h>
 #include <stdlib.h>
 
 #include "Elevator.h"
-
-
 
 extern struct Elevator elevator;
 extern pthread_mutex_t person_lock;

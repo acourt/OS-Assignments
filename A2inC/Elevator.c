@@ -9,6 +9,8 @@ int Elevator_Init()
     elevator.clockPeriod = 1;
     elevator.direction = IDLE;
     
+    elevator.person_count = 0;
+    
     elevator.upsweep_final_dest = NONE;
     elevator.downsweep_final_dest = NONE;
     
@@ -25,6 +27,14 @@ int Elevator_Init()
 int ElevatorRequest( Person * person, int destination)
 {
     pthread_mutex_lock(&(elevator.elevator_mutex));
+    
+    // Wait for the elevator to come to you.
+    while (elevator.person_count >= MAX_CAPACITY) {
+        printf("Person: %d Position: %d Destination: %d MAX_CAPACITY < %d.\n", person->ID, person->current_floor, destination, elevator.person_count);
+        pthread_cond_wait(&cond_full_elevator, &(elevator.elevator_mutex));
+    }
+    
+    elevator.person_count++;
     
     // Adjust the elevator's destination so that I can get picked up
     if (elevator.position < person->current_floor && // If I'm above the elevator
@@ -83,6 +93,8 @@ int ElevatorRequest( Person * person, int destination)
         elevator.downsweep_count--;
     }
     
+    elevator.person_count--;
+    
     pthread_mutex_unlock(&(elevator.elevator_mutex));
     return destination;
 }
@@ -107,6 +119,7 @@ void* ClockRun(void * dummyParam)
         pthread_cond_broadcast(&cond_upsweep);
         pthread_cond_broadcast(&cond_downsweep);
         pthread_cond_broadcast(&cond_request);
+        pthread_cond_broadcast(&cond_full_elevator);
         /*if (elevator.direction == UP) {
             printf("Broadcasting upsweep\n");
             pthread_cond_broadcast(&cond_upsweep);

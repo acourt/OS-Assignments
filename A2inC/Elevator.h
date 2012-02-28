@@ -15,16 +15,22 @@
 // Elevator destination
 #define NONE -1
 
+// Elevator characteristics
+#define MAX_CAPACITY 1
+
 extern struct Elevator elevator;
 extern pthread_cond_t cond_clock_notify;
 extern pthread_cond_t cond_upsweep;
 extern pthread_cond_t cond_downsweep;
 extern pthread_cond_t cond_request;
+extern pthread_cond_t cond_full_elevator;
 
 struct Elevator {
     int position;
     int clockPeriod;
     int direction;
+    int person_count;
+    
     int upsweep_final_dest;
     int downsweep_final_dest;
     

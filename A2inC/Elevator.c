@@ -6,7 +6,7 @@
 int Elevator_Init()
 {
     elevator.position = 0;
-    elevator.clockPeriod = 1;
+    elevator.clockPeriod = 2;
     elevator.direction = IDLE;
     
     elevator.upsweep_final_dest = NONE;
@@ -94,8 +94,12 @@ void ElevatorRelease( Person * person)
 
 void* ClockRun(void * dummyParam)
 {
+    // Clock Cycle
     for(;;) {
-        // Clock cycle
+        
+        
+        
+        // Broadcast clock pulses to all listening threads
         printf("Elevator Position: %d, Direction: %d upsweepFinal: %d downsweepFinal: %d\n", elevator.position, elevator.direction, 
                elevator.upsweep_final_dest, elevator.downsweep_final_dest);
         pthread_cond_broadcast(&cond_clock_notify);
@@ -107,10 +111,19 @@ void* ClockRun(void * dummyParam)
             printf("Broadcasting downsweep\n");
             pthread_cond_broadcast(&cond_downsweep);
         }
+        
+        
+        
+        // Give time for the threads to execute what they need
 		sleep(elevator.clockPeriod);
-        int prompt = 0;
-        printf("Enter a clock pulse\n");
-        scanf("%d", &prompt);
+        //int prompt = 0;
+        printf("Clock pulse done\n");
+        //scanf("%d", &prompt);
+        
+        
+        
+        // Perform Logic that drives elevator
+        pthread_mutex_lock(&(elevator.elevator_mutex));
         // Check if there are any requests while idle
         if (elevator.direction == IDLE) {
             if (elevator.upsweep_final_dest != NONE) {
@@ -139,7 +152,7 @@ void* ClockRun(void * dummyParam)
             }
         }
         else if(elevator.direction == DOWN) {
-            if (elevator.position > elevator.downsweep_final_dest) {
+            if (elevator.position > elevator.downsweep_final_dest && elevator.downsweep_final_dest != NONE) {
                 elevator.position--;
             }
             else if(elevator.position == elevator.downsweep_final_dest) {
@@ -155,7 +168,7 @@ void* ClockRun(void * dummyParam)
             }
             
         }
-        
+        pthread_mutex_unlock(&(elevator.elevator_mutex));
     } // for(;;)
 }
 

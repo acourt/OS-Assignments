@@ -10,7 +10,7 @@
 #include "Person.h"
 #include "Elevator.h"
 
-#define NUM_PERSONS 2
+#define NUM_PERSONS 3
 
 
 void printUsage();
@@ -42,7 +42,8 @@ int main (int argc, const char * argv[])
 		exit(-1);
 	}*/
     
-    Elevator_Init();
+    
+    pthread_mutex_init(&person_lock, NULL);
     for (i=0; i< NUM_PERSONS; i++) {
         persons[i] = malloc(sizeof(Person));
         Person_Init(persons[i]);
@@ -52,7 +53,7 @@ int main (int argc, const char * argv[])
         Person_Start(persons[i]);
     }
     
-    pthread_mutex_init(&person_lock, NULL);
+    Elevator_Init();
     
     /*Person person;
     Person_Init(&person);

@@ -15,15 +15,27 @@
 // Elevator destination
 #define NONE -1
 
+// Keep track how many people enter and leave the elevator
+#define ELEVATOR_RIDERS_STORAGE_SPACE 10000
+
+// Clock period (in milliseconds)
+#define CLOCK_PERIOD 200
+
+
 extern struct Elevator elevator;
 extern pthread_cond_t cond_clock_notify;
 extern pthread_cond_t cond_upsweep;
 extern pthread_cond_t cond_downsweep;
 extern pthread_cond_t cond_request;
 
+extern int print_level;
+extern int* elevator_riders_pointer;
+extern int* elevator_rider_ids;
+extern int clock_ticks;
+
+
 struct Elevator {
     int position;
-    int clockPeriod;
     int direction;
     int upsweep_final_dest;
     int downsweep_final_dest;

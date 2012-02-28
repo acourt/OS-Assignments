@@ -13,6 +13,10 @@
 #define NUM_PERSONS 3
 
 
+int print_level = 2;
+int clock_ticks = 0;
+
+
 void printUsage();
 void printUsage()
 {
@@ -31,6 +35,9 @@ pthread_cond_t cond_downsweep = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t person_lock;
 
 
+int* elevator_rider_ids;
+int* elevator_riders_pointer;
+
 Person* persons[50];
 
 int main (int argc, const char * argv[])
@@ -43,6 +50,9 @@ int main (int argc, const char * argv[])
 		exit(-1);
 	}*/
     
+    int elevator_ids[ELEVATOR_RIDERS_STORAGE_SPACE];
+    elevator_rider_ids = elevator_ids;
+    elevator_riders_pointer = elevator_rider_ids;
     
     pthread_cond_init(&cond_clock_notify, NULL);
     pthread_cond_init(&cond_request, NULL);

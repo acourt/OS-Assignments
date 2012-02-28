@@ -32,12 +32,14 @@ void* Person_Work(void* arg)
 		if(working_person->ticks_until_use_elevator == 0) {
 			// Generate next destination
 			int destination = (rand() % NUM_FLOORS);
+			if(print_level == 1)
+			    printf("Person %d requesting elevator from floor ", working_person->ID); 
             working_person->current_floor = ElevatorRequest(working_person, destination);
             ElevatorRelease(working_person);
             working_person->ticks_until_use_elevator = /*(rand() % NUM_FLOORS)*/ 5;
 		}
 		else {
-            printf("Person %d; Position: %d; Ticks: %d;\n", working_person->ID, working_person->current_floor, working_person->ticks_until_use_elevator);
+            //printf("Person %d; Position: %d; Ticks: %d;\n", working_person->ID, working_person->current_floor, working_person->ticks_until_use_elevator);
 			working_person->ticks_until_use_elevator--;
 		}
 	}

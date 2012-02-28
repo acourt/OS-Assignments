@@ -23,6 +23,7 @@ void printUsage()
 // Construct the Elevator object
 struct Elevator elevator;
 pthread_cond_t cond_clock_notify = PTHREAD_COND_INITIALIZER;
+pthread_cond_t cond_request = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_upsweep = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_downsweep = PTHREAD_COND_INITIALIZER;
 
@@ -42,6 +43,11 @@ int main (int argc, const char * argv[])
 		exit(-1);
 	}*/
     
+    
+    pthread_cond_init(&cond_clock_notify, NULL);
+    pthread_cond_init(&cond_request, NULL);
+    pthread_cond_init(&cond_upsweep, NULL);
+    pthread_cond_init(&cond_downsweep, NULL);
     
     pthread_mutex_init(&person_lock, NULL);
     for (i=0; i< NUM_PERSONS; i++) {

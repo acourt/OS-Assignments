@@ -6,7 +6,7 @@
 int Elevator_Init()
 {
     elevator.position = 0;
-    elevator.clockPeriod = 2;
+    elevator.clockPeriod = 1;
     elevator.direction = IDLE;
     
     elevator.upsweep_final_dest = NONE;
@@ -43,7 +43,7 @@ int ElevatorRequest( Person * person, int destination)
     // Wait for the elevator to come to you.
     while (elevator.position != person->current_floor) {
         printf("Person: %d Position: %d Destination: %d Waiting for elevator.\n", person->ID, person->current_floor, destination);
-        pthread_cond_wait(&cond_clock_notify, &(elevator.elevator_mutex));
+        pthread_cond_wait(&cond_request, &(elevator.elevator_mutex));
     }
     
     // If my destination is up and the elevator is not there yet
@@ -58,7 +58,7 @@ int ElevatorRequest( Person * person, int destination)
         
         // Wait for the upsweep to take me to destination
         printf("Person: %d Destination: %d Waiting on the upsweep.\n", person->ID, destination);
-        while (elevator.position < destination) {
+        while (elevator.position != destination) {
             pthread_cond_wait(&cond_upsweep, &(elevator.elevator_mutex));
             printf("Person: %d Destination: %d  Upsweeping.\n", person->ID, destination);
         }
@@ -76,7 +76,7 @@ int ElevatorRequest( Person * person, int destination)
         
         // Wait for the upsweep to take me to destination
         printf("Person: %d Destination: %d  Waiting on the downsweep.\n", person->ID, destination);
-        while (elevator.position > destination) {
+        while (elevator.position != destination) {
             pthread_cond_wait(&cond_downsweep, &(elevator.elevator_mutex));
             printf("Person: %d Destination: %d  Downsweeping.\n", person->ID, destination);
         }
@@ -104,14 +104,17 @@ void* ClockRun(void * dummyParam)
         printf("Elevator Position: %d, Direction: %d upsweepFinal: %d downsweepFinal: %d\n", elevator.position, elevator.direction, 
                elevator.upsweep_final_dest, elevator.downsweep_final_dest);
         pthread_cond_broadcast(&cond_clock_notify);
-        if (elevator.direction == UP) {
+        pthread_cond_broadcast(&cond_upsweep);
+        pthread_cond_broadcast(&cond_downsweep);
+        pthread_cond_broadcast(&cond_request);
+        /*if (elevator.direction == UP) {
             printf("Broadcasting upsweep\n");
             pthread_cond_broadcast(&cond_upsweep);
         }
         else if(elevator.direction == DOWN){
             printf("Broadcasting downsweep\n");
             pthread_cond_broadcast(&cond_downsweep);
-        }
+        }*/
         
         
         

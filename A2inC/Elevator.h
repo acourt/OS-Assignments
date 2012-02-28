@@ -19,6 +19,7 @@ extern struct Elevator elevator;
 extern pthread_cond_t cond_clock_notify;
 extern pthread_cond_t cond_upsweep;
 extern pthread_cond_t cond_downsweep;
+extern pthread_cond_t cond_request;
 
 struct Elevator {
     int position;

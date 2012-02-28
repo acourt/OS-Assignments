@@ -28,12 +28,13 @@ int ElevatorRequest( Person * person, int destination)
     
     // Adjust the elevator's destination so that I can get picked up
     if (elevator.position < person->current_floor && // If I'm above the elevator
-        0 <= elevator.upsweep_final_dest < person->current_floor) // If the elevator isn't going up enough to get me
+        elevator.upsweep_final_dest < person->current_floor) // If the elevator isn't going up enough to get me
     {
         elevator.upsweep_final_dest = person->current_floor;
     }
-    else if(elevator.position > person->current_floor && // If I'm below the elevator
+    else if((elevator.position > person->current_floor && // If I'm below the elevator
             elevator.downsweep_final_dest > person->current_floor) // If the elevator isn't going down enough to get me
+            || elevator.downsweep_final_dest == NONE) // Or if the elevator isn't moving at all
     {
         elevator.downsweep_final_dest = person->current_floor;
     }
@@ -160,7 +161,7 @@ void* ClockRun(void * dummyParam)
                 elevator.downsweep_final_dest = NONE;
                 // Check if there are any requests for upsweep
                 if (elevator.upsweep_final_dest != NONE) {
-                    elevator.direction = DOWN;
+                    elevator.direction = UP;
                 }
                 else {
                     elevator.direction = IDLE;

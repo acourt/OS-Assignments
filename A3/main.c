@@ -12,9 +12,20 @@
 
 int main (int argc, const char * argv[])
 {
-    List *l;
-    l = list_append_int(l, 100);
-    printf("Hello, World!\n");
-    return 0;
+	List *l = list_create(NULL);
+	int i= 100;
+	int j = 200;
+	int k = 300;
+	
+	// Append integers to list
+	l = list_append_int(l,i);
+	l = list_append_int(l,j);
+	l = list_append_int(l,k);
+	
+	// Dequeue integers
+	int dequeued = list_shift_int(l);
+	printf("Value of dequeued integer = %d\n, dequeued);
+	
+	return 0;
 }
 

@@ -7,11 +7,13 @@
 //
 
 #include <stdio.h>
+#include <slack/std.h>
+#include <slack/list.h>
 
 int main (int argc, const char * argv[])
 {
-    
-    // insert code here...
+    List *l;
+    l = list_append_int(l, 100);
     printf("Hello, World!\n");
     return 0;
 }

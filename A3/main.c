@@ -24,7 +24,7 @@ int main (int argc, const char * argv[])
 	
 	// Dequeue integers
 	int dequeued = list_shift_int(l);
-	printf("Value of dequeued integer = %d\n, dequeued);
+	printf("Value of dequeued integer = %d\n", dequeued);
 	
 	return 0;
 }

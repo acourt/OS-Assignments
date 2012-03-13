@@ -3,4 +3,5 @@
 Default/
 .out
 .cproject
-
+.o
+.zip

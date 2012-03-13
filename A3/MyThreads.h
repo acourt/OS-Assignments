@@ -1,4 +1,8 @@
+#include <stdlib.h>
+#include <string.h>
 
+#include <ucontext.h>
+#define THREAD_NAME_LEN 255
 
 typedef struct _mythread_control_block {
     ucontext_t context;

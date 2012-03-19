@@ -3,16 +3,30 @@
 #include <signal.h>
 #include <slack/std.h>
 #include <slack/list.h>
+#include <sys/time.h>
 #include <ucontext.h>
 #define THREAD_NAME_LEN 255
+
+typedef enum {
+	RUNNING = 0,
+	RUNNABLE,
+	BLOCKED,
+	EXIT
+} State;
+
+static char *state_string = {"RUNNING","RUNNABLE","BLOCKED","EXIT"};
 
 typedef struct _mythread_control_block {
     ucontext_t context;
     char thread_name[THREAD_NAME_LEN];
     int thread_id;
+	State state;
+	timeval start_time_val;
+	timeval elapsed_time_val;
 } mythread_control_block;
 
-
+/* prototype for handler routine */
+void handler ( );
 
 /*  This function initializes all the global data structures for the thread system.
     Mythreads package will maintain many global data structures such as the runqueue,

@@ -9,6 +9,12 @@ typedef struct _mythread_control_block {
 
 int num_threads = 0;
 
+
+int init_my_threads()
+{
+	setup_signals();
+}
+
 int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 {
 	int rvalue = 0;
@@ -21,8 +27,66 @@ int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 		control_block->thread_id = num_threads++;
 		
 		// Set up the thread context
-		//control_block->ucontext_t.
+		control_block->ucontext_t.
 	}
 	
 	return rvalue;
+}
+
+int runthreads()
+{
+
+}
+
+void scheduler()
+{
+	printf("scheduling out thread %d\n", curcontext);
+
+	curcontext = (curcontext + 1) % NUMCONTEXTS; /* round robin */
+	cur_context = &contexts[curcontext];
+
+	printf("scheduling in thread %d\n", curcontext);
+
+	setcontext(cur_context); /* go */
+}
+
+/* Set up SIGALRM signal handler */
+    void
+setup_signals(void)
+{
+	struct sigaction act;
+
+	act.sa_sigaction = timer_interrupt;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_RESTART | SA_SIGINFO;
+
+	if(sigaction(SIGALRM, &act, NULL) != 0) {
+		perror("Signal handler");
+	}
+
+	/* setup our timer */
+	it.it_interval.tv_sec = 0;
+	it.it_interval.tv_usec = INTERVAL * 1000;
+	it.it_value = it.it_interval;
+	if (setitimer(ITIMER_REAL, &it, NULL) ) perror("setitiimer");
+}
+
+/*
+   Timer interrupt handler.
+   Creates a new context to run the scheduler in, masks signals, then swaps
+   contexts saving the previously executing thread and jumping to the
+   scheduler.
+   */
+void timer_interrupt(int j, siginfo_t *si, void *old_context)
+{
+    /* Create new scheduler context */
+    getcontext(&signal_context);
+    signal_context.uc_stack.ss_sp = signal_stack;
+    signal_context.uc_stack.ss_size = STACKSIZE;
+    signal_context.uc_stack.ss_flags = 0;
+    sigemptyset(&signal_context.uc_sigmask);
+    makecontext(&signal_context, scheduler, 0);
+
+    /* save running thread, jump to scheduler */
+    swapcontext(cur_context,&signal_context);
 }

@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
-
+#include <signal.h>
+#include <slack/std.h>
+#include <slack/list.h>
 #include <ucontext.h>
 #define THREAD_NAME_LEN 255
 

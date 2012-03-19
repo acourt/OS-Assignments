@@ -62,7 +62,7 @@ int main()
 
     for(j=0; j<thread_num; j++)
     {
-        create_my_thread(thread_names[j], (void *) &handler, 64);
+        create_my_thread(thread_names[j], (void *) &handler, 4096);
     }
 
     /* Print threads informations before run */

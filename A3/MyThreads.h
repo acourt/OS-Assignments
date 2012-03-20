@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <ucontext.h>
 #define THREAD_NAME_LEN 255
+#define INT_STACKSIZE 4096
 
 typedef enum {
 	RUNNING = 0,
@@ -16,13 +17,20 @@ typedef enum {
 
 static char *state_string = {"RUNNING","RUNNABLE","BLOCKED","EXIT"};
 
+void scheduler();
+
+typedef struct _semaphore {
+	int value;
+	List* wait_queue;
+} Semaphore;
+
 typedef struct _mythread_control_block {
     ucontext_t context;
     char thread_name[THREAD_NAME_LEN];
     int thread_id;
 	State state;
-	timeval start_time_val;
-	timeval elapsed_time_val;
+	struct timeval start_time_val;
+	struct timeval elapsed_time_val;
 } mythread_control_block;
 
 /* prototype for handler routine */

@@ -119,12 +119,39 @@ int create_semaphore(int value)
 	Semaphore* sema = malloc(sizeof(Semaphore));
 	sema->value = value;
 	sema->wait_queue = list_create(NULL);
-	return sema;
+	return (int)sema;
 }
 
 void semaphore_wait(int semaphore)
 {
-	// Mask all interrupts
+	// Mask signal interrupts
+	Semaphore* sema = (Semaphore*) semaphore;
+	sema->value--;
+	
+	if(sema->value < 0)
+	{
+		// Wait in the run queue
+		list_append(sema->wait_queue, cur_context_ctrl_block);
+		cur_context_ctrl_block->state = BLOCKED;
+	}
+	
+	// Unmask signal interrupts
+	
+	// Wait until the thread becomes unblocked
+	while(cur_context_ctrl_block->state != RUNNABLE)
+	{
+		thread_yield();
+	} 
+}
+
+void thread_yield()
+{
+	
+}
+
+void semaphore_signal(int semaphore)
+{
+	
 }
 
 void runthreads()

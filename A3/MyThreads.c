@@ -1,19 +1,15 @@
 #include "MyThreads.h"
 
-/*
-typedef struct _mythread_control_block {
-    ucontext_t context;
-    char thread_name[THREAD_NAME_LEN];
-    int thread_id;
-} mythread_control_block;*/
-
-
 ucontext_t signal_context;		  /* the interrupt context */
 void *signal_stack;				 /* global interrupt stack */
+
+ucontext_t main_context;		  /* the main context  */
+void *main_stack;				 /* main stack */
 
 mythread_control_block *cur_context_ctrl_block;
 
 int num_threads = 0;
+int num_running_threads = 0;
 int quantum_size = 1000; // Quantum size in nanoseconds
 
 
@@ -94,7 +90,6 @@ int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 		control_block->thread_id = num_threads++;
 		
 		// Set up the thread context
-
 		sp = malloc(stacksize);
 		if (sp == NULL) {
 			perror("Error Allocating Memory for thread");
@@ -106,6 +101,8 @@ int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 		control_block->context.uc_stack.ss_flags = 0;
 		sigemptyset(&(control_block->context.uc_sigmask));
 		makecontext(&(control_block->context), threadfunc, 0);
+		
+		num_running_threads++;
 		
 		// Add to the list of running threads
 		list_append(threads, control_block);
@@ -145,8 +142,6 @@ void semaphore_wait(int semaphore)
 	
 	if(sema->value < 0)
 	{
-		// Remove the current context from the end of the run queue
-		list_pop(run_queue);
 		// Wait in the semaphore's wait queue queue
 		list_append(sema->wait_queue, cur_context_ctrl_block);
 		cur_context_ctrl_block->state = BLOCKED;
@@ -203,6 +198,16 @@ void runthreads()
 	/* force a swap to the first context */
 	cur_context_ctrl_block = list_shift(run_queue);
 	list_append(run_queue, cur_context_ctrl_block);
+	
+	getcontext(&main_context);
+	
+	if(num_running_threads == 0)
+	{
+		// Disable signals since we are at the end of the running of the threads
+		sigemptyset(&main_context.uc_sigmask);
+		return;	
+	}	
+	
 	setcontext(&(cur_context_ctrl_block->context)); /* go */
 }
 
@@ -210,20 +215,53 @@ void scheduler()
 {
 	printf("scheduling out thread %d\n", cur_context_ctrl_block->thread_id);
 	
-	// Take the next context in line and put it in the back of the queue for when it returns
+	// If at the end of the run it is still runnable, but it back in the run queue
+	if(cur_context_ctrl_block->state == RUNNABLE || RUNNING)
+	{
+		cur_context_ctrl_block->state = RUNNABLE;
+		list_append(run_queue, cur_context_ctrl_block);
+	}
+	
+	if(num_running_threads == 0)
+	{
+		// Deactivate timer and return to main.
+	}
+	
+	// Take the next context in line
 	cur_context_ctrl_block = list_shift(run_queue);
-	list_append(run_queue, cur_context_ctrl_block);
 	
 	printf("scheduling in thread %d\n", cur_context_ctrl_block->thread_id);
+	
+	cur_context_ctrl_block->state = RUNNING;
 	
 	setcontext(&(cur_context_ctrl_block->context)); /* go */
 }
 
 void set_quantum_size(int quantum)
 {
-	quantum_size = quantum*1000;
+	quantum_size = quantum*1000000;
 }
 
+void exit_my_thread()
+{
+	cur_context_ctrl_block->state = EXIT;
+	num_running_threads--;
+	setcontext(&(cur_context_ctrl_block->context));
+}
 
+void my_threads_state()
+{
+	mythread_control_block* thread;
+	int i;
+	for(i=0; i < (list_length(threads)); i++)
+	{
+		thread = list_item(threads, i);
+		printf("Thread %d is state %d", thread->thread_id, thread->state);
+	}
+}
 
+void destroy_semaphore(int semaphore)
+{
+	
+}
 

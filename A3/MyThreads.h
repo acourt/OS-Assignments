@@ -15,7 +15,7 @@ typedef enum {
 	EXIT
 } State;
 
-static char *state_string = {"RUNNING","RUNNABLE","BLOCKED","EXIT"};
+//static char *state_string = {"RUNNING","RUNNABLE","BLOCKED","EXIT"};
 
 void scheduler();
 
@@ -33,8 +33,6 @@ typedef struct _mythread_control_block {
 	struct timeval elapsed_time_val;
 } mythread_control_block;
 
-/* prototype for handler routine */
-void handler ( );
 
 /*  This function initializes all the global data structures for the thread system.
     Mythreads package will maintain many global data structures such as the runqueue,

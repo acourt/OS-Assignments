@@ -10,25 +10,101 @@
 #include <slack/std.h>
 #include <slack/list.h>
 #include <sys/time.h>
+#include <stdlib.h>     
+#include <math.h>
+
+#include "MyThreads.h"
 
 
-int main (int argc, const char * argv[])
+/* global vars */
+
+/* semaphores are declared global so they can be accessed 
+   in main() and in thread routine,
+   here, the semaphore is used as a mutex */
+
+int counter_mutex;
+
+/* shared variables */
+int counter; 
+double result = 0.0;
+
+void handler ()
 {
-	
-	List *l = list_create(NULL);
-	int i= 100;
-	int j = 200;
-	int k = 300;
-	
-	// Append integers to list
-	l = list_append_int(l,i);
-	l = list_append_int(l,j);
-	l = list_append_int(l,k);
-	
-	// Dequeue integers
-	int dequeued = list_shift_int(l);
-	printf("Value of dequeued integer = %d\n", dequeued);
-	
-	return 0;
+    int i;
+    for(i=0; i < 5; i++)
+    {
+        /* If you remove this protection, you should be able to see different
+         * out of every time you run this program.  With this protection, you
+         * should always be able to see result to be 151402.656521 */
+        semaphore_wait(counter_mutex);       /* down semaphore */
+
+        /* START CRITICAL REGION */
+        int j;
+        for (j = 0; j < 1000; j++) {
+            result = result + sin(counter) * tan(counter);
+        }
+        counter++;
+        /* END CRITICAL REGION */    
+
+        semaphore_signal(counter_mutex);       /* up semaphore */
+    }
+    
+    exit_my_thread(); /* exit thread */
 }
+
+
+int main()
+{
+    int thread_num = 10;
+    int j;
+    char* thread_names[] = {
+        "thread 0",
+        "thread 1",
+        "thread 2",
+        "thread 3",
+        "thread 4",
+        "thread 5",
+        "thread 6",
+        "thread 7",
+        "thread 8",
+        "thread 9"
+    };
+
+    /* Initialize MyThreads library. */
+    init_my_threads();
+
+    /* 250 ms */
+    set_quantum_size(250);
+
+    counter_mutex = create_semaphore(1);
+
+    for(j=0; j<thread_num; j++)
+    {
+        create_my_thread(thread_names[j], (void *) &handler, 4096);
+    }
+
+    /* Print threads informations before run */
+    my_threads_state();
+
+    /* When this function returns, all threads should have exited. */
+    runthreads();
+    
+    destroy_semaphore(counter_mutex);
+
+    /* Print threads informations after run */
+    my_threads_state();
+
+    printf("The counter is %d\n", counter);
+    printf("The result is %f\n", result);
+	return 0;
+    //exit(0);
+}
+
+
+
+
+
+
+
+
 

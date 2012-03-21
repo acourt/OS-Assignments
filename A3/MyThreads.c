@@ -221,7 +221,7 @@ void scheduler()
 
 void set_quantum_size(int quantum)
 {
-	quantum_size = quantum;
+	quantum_size = quantum*1000;
 }
 
 

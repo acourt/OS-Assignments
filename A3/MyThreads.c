@@ -14,11 +14,11 @@ void *signal_stack;				 /* global interrupt stack */
 mythread_control_block *cur_context_ctrl_block;
 
 int num_threads = 0;
-int quantum_size = 1; // Quantum size in nanoseconds
+int quantum_size = 1000; // Quantum size in nanoseconds
 
 
 Semaphore* semaphore_table[255];
-int next_semaphore_index;
+int next_semaphore_index = 0;
 
 
 List* threads;
@@ -78,9 +78,6 @@ int init_my_threads()
 	run_queue = list_create(NULL);
 	// Create the semaphores
 	
-	// Set up the prememption process
-	struct itimerval tval;
-	setup_signals();
 
 }	
 	
@@ -200,7 +197,13 @@ void semaphore_signal(int semaphore)
 
 void runthreads()
 {
-
+	printf("Running threads\n");
+	setup_signals();
+	
+	/* force a swap to the first context */
+	cur_context_ctrl_block = list_shift(run_queue);
+	list_append(run_queue, cur_context_ctrl_block);
+	setcontext(&(cur_context_ctrl_block->context)); /* go */
 }
 
 void scheduler()

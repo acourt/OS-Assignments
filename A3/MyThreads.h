@@ -71,3 +71,8 @@ void semaphore_signal(int semaphore);
 void destroy_semaphore(int semaphore);
 
 void my_threads_state();
+
+
+
+
+

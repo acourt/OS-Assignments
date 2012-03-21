@@ -216,6 +216,11 @@ void scheduler()
 	setcontext(&(cur_context_ctrl_block->context)); /* go */
 }
 
+void set_quantum_size(int quantum)
+{
+	quantum_size = quantum;
+}
+
 
 
 

@@ -256,7 +256,7 @@ void my_threads_state()
 	for(i=0; i < (list_length(threads)); i++)
 	{
 		thread = list_item(threads, i);
-		printf("Thread %d is state %d", thread->thread_id, thread->state);
+		printf("Thread %d is state %d\n", thread->thread_id, thread->state);
 	}
 }
 

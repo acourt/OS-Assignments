@@ -1,10 +1,11 @@
 #include "MyThreads.h"
 
-ucontext_t signal_context;		  /* the interrupt context */
-void *signal_stack;				 /* global interrupt stack */
 
 ucontext_t main_context;		  /* the main context  */
 void *main_stack;				 /* main stack */
+
+ucontext_t scheduler_context;	/* the scheduler context */
+void *scheduler_stack;			/* main stack */
 
 mythread_control_block *cur_context_ctrl_block;
 
@@ -22,41 +23,13 @@ List* run_queue;
 List* semaphores;
 
 
-/*
-   Timer interrupt handler.
-   Creates a new context to run the scheduler in, masks signals, then swaps
-   contexts saving the previously executing thread and jumping to the
-   scheduler.
-   */
-void timer_interrupt(int j, siginfo_t *si, void *old_context)
-{
-    /* Create new scheduler context */
-    getcontext(&signal_context);
-    signal_context.uc_stack.ss_sp = signal_stack;
-    signal_context.uc_stack.ss_size = INT_STACKSIZE;
-    signal_context.uc_stack.ss_flags = 0;
-    sigemptyset(&signal_context.uc_sigmask);
-    makecontext(&signal_context, scheduler, 0);
-	
-    /* save running thread, jump to scheduler */
-    swapcontext(&(cur_context_ctrl_block->context),&signal_context);
-}
-
-
 /* Set up SIGALRM signal handler */
     void
 setup_signals(void)
 {
-	struct sigaction act;
 	struct itimerval it;
 	
-	act.sa_sigaction = timer_interrupt;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = SA_RESTART | SA_SIGINFO;
-	
-	if(sigaction(SIGALRM, &act, NULL) != 0) {
-		perror("Signal handler");
-	}
+	sigset(SIGALRM, scheduler);
 	
 	/* setup our timer */
 	it.it_interval.tv_sec = 0;
@@ -72,8 +45,6 @@ int init_my_threads()
 	// Create the run queue
 	threads = list_create(NULL);
 	run_queue = list_create(NULL);
-	// Create the semaphores
-	
 
 }	
 	
@@ -99,8 +70,8 @@ int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 		control_block->context.uc_stack.ss_sp = sp;
 		control_block->context.uc_stack.ss_size = stacksize;
 		control_block->context.uc_stack.ss_flags = 0;
-		sigemptyset(&(control_block->context.uc_sigmask));
 		makecontext(&(control_block->context), threadfunc, 0);
+		sigemptyset(&(control_block->context.uc_sigmask));
 		
 		num_running_threads++;
 		
@@ -135,7 +106,7 @@ void semaphore_wait(int semaphore)
 	Semaphore * sema = semaphore_table[semaphore];
 	
 	// Mask signal interrupts
-	sigrelse(SIGALRM);
+	sighold(SIGALRM);
 	
 	// P
 	sema->value--;
@@ -148,7 +119,7 @@ void semaphore_wait(int semaphore)
 	}
 	
 	// Unmask signal interrupts
-	sighold(SIGALRM);
+	sigrelse(SIGALRM);
 	
 	// Wait until the thread becomes unblocked
 	while(cur_context_ctrl_block->state != RUNNABLE)
@@ -170,7 +141,7 @@ void semaphore_signal(int semaphore)
 	Semaphore * sema = semaphore_table[semaphore];
 	
 	// Mask signal interrupts
-	sigrelse(SIGALRM);
+	sighold(SIGALRM);
 	
 	mythread_control_block* next_in_line = list_shift(sema->wait_queue);
 	
@@ -186,28 +157,31 @@ void semaphore_signal(int semaphore)
 	}
 	
 	// UnMask signal interrupts
-	sighold(SIGALRM);
+	sigrelse(SIGALRM);
 	
 }
 
 void runthreads()
 {
 	printf("Running threads\n");
-	setup_signals();
 	
 	/* force a swap to the first context */
 	cur_context_ctrl_block = list_shift(run_queue);
 	list_append(run_queue, cur_context_ctrl_block);
 	
+	// At the end of the program, the scheduler will come back to this point
 	getcontext(&main_context);
 	
+	// If done running the program, go back to main
 	if(num_running_threads == 0)
 	{
 		// Disable signals since we are at the end of the running of the threads
 		sigemptyset(&main_context.uc_sigmask);
 		return;	
-	}	
+	}
 	
+	// If this is the start of the program, set up the signal and start the scheduler
+	setup_signals();
 	setcontext(&(cur_context_ctrl_block->context)); /* go */
 }
 

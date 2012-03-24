@@ -31,13 +31,15 @@ double result = 0.0;
 void handler ()
 {
     int i;
+	//printf("In the function\n");
     for(i=0; i < 5; i++)
     {
         /* If you remove this protection, you should be able to see different
          * out of every time you run this program.  With this protection, you
          * should always be able to see result to be 151402.656521 */
+		
         semaphore_wait(counter_mutex);       /* down semaphore */
-
+		
         /* START CRITICAL REGION */
         int j;
         for (j = 0; j < 1000; j++) {
@@ -48,7 +50,7 @@ void handler ()
 
         semaphore_signal(counter_mutex);       /* up semaphore */
     }
-    
+    printf("Exiting\n");
     exit_my_thread(); /* exit thread */
 }
 
@@ -96,8 +98,8 @@ int main()
 
     printf("The counter is %d\n", counter);
     printf("The result is %f\n", result);
-	return 0;
-    //exit(0);
+
+    exit(0);
 }
 
 

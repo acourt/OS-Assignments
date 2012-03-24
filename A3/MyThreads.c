@@ -33,7 +33,6 @@ void setup_signals(void)
 	it.it_value.tv_sec = 0;
 	it.it_value.tv_usec = quantum_size *1000;
 	if (setitimer(ITIMER_REAL, &it, NULL) ) perror("setitiimer");
-	
 }
 
 
@@ -43,7 +42,11 @@ int init_my_threads()
 	// Create the run queue
 	threads = list_create(NULL);
 	run_queue = list_create(NULL);
+	
+	// Clear the main's mask
+	sigemptyset(&main_context.uc_sigmask);
 
+	// Create the sceduler context
 	getcontext(&scheduler_context);
 	scheduler_stack = malloc(INT_STACKSIZE);
 	scheduler_context.uc_stack.ss_sp = scheduler_stack;
@@ -51,6 +54,10 @@ int init_my_threads()
 	scheduler_context.uc_stack.ss_flags = 0;
 	sigemptyset(&scheduler_context.uc_sigmask);
 	makecontext(&scheduler_context, scheduler, 0);
+	
+	// Set up the signals
+	setup_signals();
+	sighold(SIGALRM);
 }	
 	
 int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
@@ -83,6 +90,7 @@ int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 		
 		// Add to the list of running threads
 		list_append(threads, control_block);
+		list_append(run_queue, control_block);
 		
 	}
 	
@@ -92,22 +100,16 @@ int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 
 void runthreads()
 {
-	printf("Running threads\n");
-	
-	// Set up the signal and start the scheduler
-	setup_signals();
-	printf("Swap\n");
-	// At the end of the program, the scheduler will come back to this point
-	swapcontext(&main_context, &scheduler_context);
-	
-	// Set the returning thread's state to EXIT
-	sighold(SIGALRM);
-	cur_context_ctrl_block->state = EXIT;
+	// Take the first context in line
+	cur_context_ctrl_block = list_shift(run_queue);
+	cur_context_ctrl_block->state = RUNNING;
 	sigrelse(SIGALRM);
+	
+	swapcontext(&main_context, &(cur_context_ctrl_block->context));
 	
 	while(num_running_threads != 0)
 	{
-		// waste cycles and wait until the signal handler makes it go back into the scheduler
+		setcontext(&scheduler_context);
 	}
 	
 	// Disable signals since we are at the end of the running of the threads
@@ -118,10 +120,13 @@ void runthreads()
 void scheduler()
 {
 	printf("scheduling out thread %d\n", cur_context_ctrl_block->thread_id);
+	printf("state is: %d\n", cur_context_ctrl_block->state);
 	
 	// If at the end of the run it is still runnable, but it back in the run queue
-	if(cur_context_ctrl_block->state == RUNNABLE || RUNNING)
+	if((cur_context_ctrl_block->state == RUNNABLE) || 
+		(cur_context_ctrl_block->state == RUNNING))
 	{
+		printf("Putting %d back to run queue.\n", cur_context_ctrl_block->thread_id);
 		cur_context_ctrl_block->state = RUNNABLE;
 		list_append(run_queue, cur_context_ctrl_block);
 	}
@@ -129,16 +134,21 @@ void scheduler()
 	{
 		// if it's blocked do nothing
 	}
+	else if(cur_context_ctrl_block->state == EXIT)
+	{
+		// if it's exited do nothing
+	}
 	
 	if(num_running_threads == 0)
 	{
+		setcontext(&main_context);
 		// Deactivate timer and return to main.
 	}
 	
 	// Take the next context in line
 	cur_context_ctrl_block = list_shift(run_queue);
+	printf("Next in line is: %d\n", cur_context_ctrl_block->thread_id);
 	cur_context_ctrl_block->state = RUNNING;
-	
 	printf("scheduling in thread %d\n", cur_context_ctrl_block->thread_id);
 	
 	setcontext(&(cur_context_ctrl_block->context)); /* go */
@@ -153,7 +163,7 @@ void exit_my_thread()
 {
 	cur_context_ctrl_block->state = EXIT;
 	num_running_threads--;
-	setcontext(&(cur_context_ctrl_block->context));
+	setcontext(&scheduler_context);
 }
 
 void my_threads_state()
@@ -183,7 +193,7 @@ void semaphore_wait(int semaphore)
 {
 	if(semaphore_table[semaphore] == NULL)
 	{
-		printf("Error: Tried to wait on a semaphore that was not initialized");
+		perror("Error: Tried to wait on a semaphore that was not initialized");
 		exit(-1);
 	}
 	
@@ -207,15 +217,16 @@ void semaphore_wait(int semaphore)
 	sigrelse(SIGALRM);
 	
 	// Wait until the thread becomes unblocked
-	while(cur_context_ctrl_block->state != RUNNABLE)
+	while(cur_context_ctrl_block->state == BLOCKED)
 	{
-		// Switch to the scheduler program
+		swapcontext(&(cur_context_ctrl_block->context), &scheduler_context);
 	} 
 }
 
 
 void semaphore_signal(int semaphore)
 {
+	//printf("Thread %d is Signaling\n", cur_context_ctrl_block->thread_id);
 	if(semaphore_table[semaphore] == NULL)
 	{
 		printf("Error: Tried to wait on a semaphore that was not initialized");
@@ -228,14 +239,13 @@ void semaphore_signal(int semaphore)
 	// Mask signal interrupts
 	sighold(SIGALRM);
 	
+	// V
+	sema->value++;
+	printf("value: %d\n",sema->value);
 	mythread_control_block* next_in_line = list_shift(sema->wait_queue);
 	
-	// If there are no more threads waiting on this semaphores
-	if(next_in_line == NULL)
-	{
-		sema->value++;
-	}
-	else // Unqueue the next thread and put it in the run queue
+	// Unqueue the next thread and put it in the run queue
+	if(next_in_line != NULL)
 	{
 		next_in_line->state = RUNNABLE;
 		list_append(run_queue, cur_context_ctrl_block);

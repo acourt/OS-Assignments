@@ -31,7 +31,7 @@ double result = 0.0;
 void handler ()
 {
     int i;
-	//printf("In the function\n");
+
     for(i=0; i < 5; i++)
     {
         /* If you remove this protection, you should be able to see different
@@ -50,7 +50,6 @@ void handler ()
 
         semaphore_signal(counter_mutex);       /* up semaphore */
     }
-    printf("Exiting\n");
     exit_my_thread(); /* exit thread */
 }
 

@@ -11,15 +11,17 @@ mythread_control_block *cur_context_ctrl_block;
 
 int num_threads = 0;
 int num_running_threads = 0;
-int quantum_size = 1000; // Quantum size in microseconds
+int quantum_size = 100; // Quantum size in microseconds
 
 
 Semaphore* semaphore_table[255];
 int next_semaphore_index = 0;
 
-List* threads;
+// Thread control block table
+mythread_control_block* thread_table[255];
+int next_table_index = 0;
+// The run queue
 List* run_queue;
-List* semaphores;
 
 
 void setup_signals(void)
@@ -27,11 +29,11 @@ void setup_signals(void)
 	struct itimerval it;
 	sigset(SIGALRM, scheduler);
 	
-	/* setup our timer */
+	// Setup the timer 
 	it.it_interval.tv_sec = 0;
-	it.it_interval.tv_usec = quantum_size * 1000;
+	it.it_interval.tv_usec = 100*quantum_size;
 	it.it_value.tv_sec = 0;
-	it.it_value.tv_usec = quantum_size *1000;
+	it.it_value.tv_usec = 100*quantum_size;
 	if (setitimer(ITIMER_REAL, &it, NULL) ) perror("setitiimer");
 }
 
@@ -40,7 +42,6 @@ void setup_signals(void)
 int init_my_threads()
 {
 	// Create the run queue
-	threads = list_create(NULL);
 	run_queue = list_create(NULL);
 	
 	// Clear the main's mask
@@ -55,9 +56,6 @@ int init_my_threads()
 	sigemptyset(&scheduler_context.uc_sigmask);
 	makecontext(&scheduler_context, scheduler, 0);
 	
-	// Set up the signals
-	setup_signals();
-	sighold(SIGALRM);
 }	
 	
 int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
@@ -79,6 +77,7 @@ int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 			exit(1);
 		}
 		getcontext(&(control_block->context));
+		control_block->state = RUNNABLE;
 		control_block->context.uc_stack.ss_sp = sp;
 		control_block->context.uc_stack.ss_size = stacksize;
 		control_block->context.uc_stack.ss_flags = 0;
@@ -89,9 +88,8 @@ int create_my_thread(char *threadname, void (*threadfunc)(), int stacksize)
 		num_running_threads++;
 		
 		// Add to the list of running threads
-		list_append(threads, control_block);
 		list_append(run_queue, control_block);
-		
+		thread_table[next_table_index++] = control_block;
 	}
 	
 	return rvalue;
@@ -119,48 +117,46 @@ void runthreads()
 
 void scheduler()
 {
-	printf("scheduling out thread %d\n", cur_context_ctrl_block->thread_id);
-	printf("state is: %d\n", cur_context_ctrl_block->state);
-	
 	// If at the end of the run it is still runnable, but it back in the run queue
 	if((cur_context_ctrl_block->state == RUNNABLE) || 
 		(cur_context_ctrl_block->state == RUNNING))
 	{
-		printf("Putting %d back to run queue.\n", cur_context_ctrl_block->thread_id);
 		cur_context_ctrl_block->state = RUNNABLE;
 		list_append(run_queue, cur_context_ctrl_block);
 	}
-	else if(cur_context_ctrl_block->state == BLOCKED)
-	{
-		// if it's blocked do nothing
-	}
-	else if(cur_context_ctrl_block->state == EXIT)
-	{
-		// if it's exited do nothing
-	}
 	
+	// Assume the thread ran for its full quantum
+	cur_context_ctrl_block->run_time = cur_context_ctrl_block->run_time + quantum_size;
+	
+	// If all threads have exited
 	if(num_running_threads == 0)
 	{
 		setcontext(&main_context);
 		// Deactivate timer and return to main.
 	}
+
 	
 	// Take the next context in line
 	cur_context_ctrl_block = list_shift(run_queue);
-	printf("Next in line is: %d\n", cur_context_ctrl_block->thread_id);
 	cur_context_ctrl_block->state = RUNNING;
-	printf("scheduling in thread %d\n", cur_context_ctrl_block->thread_id);
-	
-	setcontext(&(cur_context_ctrl_block->context)); /* go */
+
+	// Execute the next thread
+	setcontext(&(cur_context_ctrl_block->context)); 
 }
 
 void set_quantum_size(int quantum)
 {
 	quantum_size = quantum;
+	
+	// Set up the signals
+	setup_signals();
+	// Block all signals until threads are ready to run
+	sighold(SIGALRM);
 }
 
 void exit_my_thread()
 {
+	// Set the thread to the exit state and go back to the scheduler
 	cur_context_ctrl_block->state = EXIT;
 	num_running_threads--;
 	setcontext(&scheduler_context);
@@ -170,10 +166,14 @@ void my_threads_state()
 {
 	mythread_control_block* thread;
 	int i;
-	for(i=0; i < (list_length(threads)); i++)
+	for(i=0; i < next_table_index; i++)
 	{
-		thread = list_item(threads, i);
-		printf("Thread %d is state %d\n", thread->thread_id, thread->state);
+		thread = thread_table[i];
+		printf("%s\t%s\t%d\t\n",
+				thread->thread_name,
+				state_string[thread->state],
+				thread->run_time		
+		);
 	}
 }
 
@@ -182,6 +182,7 @@ int create_semaphore(int value)
 {
 	Semaphore* sema = malloc(sizeof(Semaphore));
 	sema->value = value;
+	sema->initial_value = value;
 	sema->wait_queue = list_create(NULL);
 	
 	semaphore_table[next_semaphore_index++] = sema;
@@ -229,7 +230,7 @@ void semaphore_signal(int semaphore)
 	//printf("Thread %d is Signaling\n", cur_context_ctrl_block->thread_id);
 	if(semaphore_table[semaphore] == NULL)
 	{
-		printf("Error: Tried to wait on a semaphore that was not initialized");
+		printf("Error: Tried to signal on a semaphore that was not initialized\n");
 		exit(-1);
 	}
 	
@@ -241,10 +242,10 @@ void semaphore_signal(int semaphore)
 	
 	// V
 	sema->value++;
-	printf("value: %d\n",sema->value);
-	mythread_control_block* next_in_line = list_shift(sema->wait_queue);
 	
 	// Unqueue the next thread and put it in the run queue
+	mythread_control_block* next_in_line = list_shift(sema->wait_queue);
+
 	if(next_in_line != NULL)
 	{
 		next_in_line->state = RUNNABLE;
@@ -258,6 +259,23 @@ void semaphore_signal(int semaphore)
 
 void destroy_semaphore(int semaphore)
 {
+	Semaphore* sema = semaphore_table[semaphore];
 	
+	if(sema == NULL)
+	{
+		printf("Error: Tried to delete a semaphore that was not initialized\n"); 
+	}
+	else if(!list_empty(sema->wait_queue))
+	{
+		printf("Error: There are still threads waiting on this semaphore\n"); 
+	}
+	
+	if(sema->initial_value != sema->value)
+	{
+		printf("Warning: the initial value of the semaphore is not equal to the final value\n");
+	}
+	
+	free(semaphore_table[semaphore]);
+
 }
 

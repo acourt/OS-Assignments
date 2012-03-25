@@ -1,0 +1,37 @@
+Alexandre Courtemanche
+McGill ID: 260291136
+
+All the parts have been implemented, I've tested with the main that the TA has sent. and it seems to work. I've tested with a different quantum (10ms) and it seems to work fine.
+
+TO COMPILE AND RUN:
+
+Run the makefile and do:
+"make all"
+
+To run you must do:
+"./main.o"
+
+The output is essentially what is supposed to be obtained by running the TA's code (run with 10 ms as the quantum):
+thread 0        RUNNABLE        0
+thread 1        RUNNABLE        0
+thread 2        RUNNABLE        0
+thread 3        RUNNABLE        0
+thread 4        RUNNABLE        0
+thread 5        RUNNABLE        0
+thread 6        RUNNABLE        0
+thread 7        RUNNABLE        0
+thread 8        RUNNABLE        0
+thread 9        RUNNABLE        0
+thread 0        EXIT    10
+thread 1        EXIT    10
+thread 2        EXIT    40
+thread 3        EXIT    60
+thread 4        EXIT    60
+thread 5        EXIT    60
+thread 6        EXIT    60
+thread 7        EXIT    60
+thread 8        EXIT    60
+thread 9        EXIT    60
+The counter is 50
+The result is 151402.656521
+

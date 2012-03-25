@@ -30,7 +30,6 @@ double result = 0.0;
 
 void handler ()
 {
-	printf("Beginning the function\n");
     int i;
     for(i=0; i < 5; i++)
     {

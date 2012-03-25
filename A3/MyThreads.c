@@ -248,7 +248,7 @@ void semaphore_signal(int semaphore)
 	
 	// Mask signal interrupts
 	sighold(SIGALRM);
-	printf("%d is signaling, %d to %d\n", cur_context_ctrl_block->thread_id, sema->value, sema->value+1);
+	//printf("%d is signaling, %d to %d\n", cur_context_ctrl_block->thread_id, sema->value, sema->value+1);
 	// V
 	sema->value++;
 	
@@ -257,7 +257,7 @@ void semaphore_signal(int semaphore)
 
 	if(next_in_line != NULL)
 	{
-		printf("Thread is %d pulled out of wait queue.\n", next_in_line->thread_id);
+		//printf("Thread is %d pulled out of wait queue.\n", next_in_line->thread_id);
 		next_in_line->state = RUNNABLE;
 		list_append(run_queue, next_in_line);
 	}

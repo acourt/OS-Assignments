@@ -30,8 +30,8 @@ double result = 0.0;
 
 void handler ()
 {
+	printf("Beginning the function\n");
     int i;
-
     for(i=0; i < 5; i++)
     {
         /* If you remove this protection, you should be able to see different
@@ -47,7 +47,7 @@ void handler ()
         }
         counter++;
         /* END CRITICAL REGION */    
-
+		
         semaphore_signal(counter_mutex);       /* up semaphore */
     }
     exit_my_thread(); /* exit thread */
@@ -75,7 +75,7 @@ int main()
     init_my_threads();
 
     /* 250 ms */
-    set_quantum_size(250);
+    set_quantum_size(10);
 
     counter_mutex = create_semaphore(1);
 
@@ -87,6 +87,7 @@ int main()
     /* Print threads informations before run */
     my_threads_state();
 
+	printf("");
     /* When this function returns, all threads should have exited. */
     runthreads();
     

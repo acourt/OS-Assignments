@@ -8,7 +8,6 @@
 #define THREAD_NAME_LEN 255
 #define INT_STACKSIZE 4096
 
-
 typedef enum {
 	RUNNING = 0,
 	RUNNABLE,

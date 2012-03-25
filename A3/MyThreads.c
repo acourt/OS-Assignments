@@ -101,8 +101,9 @@ void runthreads()
 	// Take the first context in line
 	cur_context_ctrl_block = list_shift(run_queue);
 	cur_context_ctrl_block->state = RUNNING;
+
 	sigrelse(SIGALRM);
-	
+
 	swapcontext(&main_context, &(cur_context_ctrl_block->context));
 	
 	while(num_running_threads != 0)
@@ -118,6 +119,9 @@ void runthreads()
 void scheduler()
 {
 	// If at the end of the run it is still runnable, but it back in the run queue
+	//printf("Thread %d is back and is %s\n", cur_context_ctrl_block->thread_id,
+	//							state_string[cur_context_ctrl_block->state]);
+	
 	if((cur_context_ctrl_block->state == RUNNABLE) || 
 		(cur_context_ctrl_block->state == RUNNING))
 	{
@@ -135,13 +139,16 @@ void scheduler()
 		// Deactivate timer and return to main.
 	}
 
-	
+	// Save the old context
+	mythread_control_block* previous_context_ctrl_block = cur_context_ctrl_block;
 	// Take the next context in line
 	cur_context_ctrl_block = list_shift(run_queue);
 	cur_context_ctrl_block->state = RUNNING;
-
+	
+	//printf("Scheduling out %d\n", cur_context_ctrl_block->thread_id);
+	
 	// Execute the next thread
-	setcontext(&(cur_context_ctrl_block->context)); 
+	swapcontext(&(previous_context_ctrl_block->context) ,&(cur_context_ctrl_block->context)); 
 }
 
 void set_quantum_size(int quantum)
@@ -205,12 +212,14 @@ void semaphore_wait(int semaphore)
 	sighold(SIGALRM);
 	
 	// P
+	//printf("%d is waiting, %d to %d\n", cur_context_ctrl_block->thread_id, sema->value, sema->value-1);
 	sema->value--;
 	
 	if(sema->value < 0)
 	{
 		// Wait in the semaphore's wait queue queue
 		list_append(sema->wait_queue, cur_context_ctrl_block);
+		//printf("%d is Blocked on sema's value %d\n", cur_context_ctrl_block->thread_id, sema->value);
 		cur_context_ctrl_block->state = BLOCKED;
 	}
 	
@@ -220,7 +229,7 @@ void semaphore_wait(int semaphore)
 	// Wait until the thread becomes unblocked
 	while(cur_context_ctrl_block->state == BLOCKED)
 	{
-		swapcontext(&(cur_context_ctrl_block->context), &scheduler_context);
+		//swapcontext(&(cur_context_ctrl_block->context), &scheduler_context);
 	} 
 }
 
@@ -239,7 +248,7 @@ void semaphore_signal(int semaphore)
 	
 	// Mask signal interrupts
 	sighold(SIGALRM);
-	
+	printf("%d is signaling, %d to %d\n", cur_context_ctrl_block->thread_id, sema->value, sema->value+1);
 	// V
 	sema->value++;
 	
@@ -248,8 +257,9 @@ void semaphore_signal(int semaphore)
 
 	if(next_in_line != NULL)
 	{
+		printf("Thread is %d pulled out of wait queue.\n", next_in_line->thread_id);
 		next_in_line->state = RUNNABLE;
-		list_append(run_queue, cur_context_ctrl_block);
+		list_append(run_queue, next_in_line);
 	}
 	
 	// UnMask signal interrupts

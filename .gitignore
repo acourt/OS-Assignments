@@ -5,3 +5,4 @@ Default/
 *.cproject
 *.o
 *.zip
+*.DS_Store

@@ -168,6 +168,7 @@ int write_blocks(int start_address, int nblocks, void *buffer)
         memcpy(blockWrite, buffer+(i*BLOCK_SIZE), BLOCK_SIZE);
 
         fwrite(blockWrite, BLOCK_SIZE, 1, fp);
+        fflush(fp);
         s++;
     }
     free(blockWrite);

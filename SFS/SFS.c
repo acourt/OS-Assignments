@@ -143,7 +143,7 @@ int get_free_dir_index()
 	int i, index = -1, found_free_index = 0;
 	
 	for ( i=0; i < MAX_FILES && !found_free_index; i++) {
-		if (!dir_entry_is_null(i)) {
+		if (dir_entry_is_null(i)) {
 			found_free_index = 1;
 			index = i;
 		}
@@ -158,7 +158,7 @@ void mksfs(int fresh)
 	if (fresh) {
 		// Clear
 		memset(FAT,0, sizeof(FAT_entry)*(DISK_SIZE-3));
-		memset(free_list,0, sizeof(int)*(DISK_SIZE-3));
+		memset(free_list,1, sizeof(int)*(DISK_SIZE-3));
 		memset(directory, 0, sizeof(dir_entry)*MAX_FILES);
 		init_fresh_disk("DISK_FILE.txt", BLOCK_SIZE, DISK_SIZE);
 	}

@@ -51,7 +51,6 @@ int init_fresh_disk(char *filename, int block_size, int num_blocks)
         printf("Could not create new disk file %s\n\n", filename);
         return -1;
     }
-    
     /*Fills the file with 0's to its given size*/
     for (i = 0; i < MAX_BLOCK; i++)
     {

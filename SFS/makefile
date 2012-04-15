@@ -1,6 +1,12 @@
 sfs_test: sfs_test.o sfs_api.o disk_emu.o
 	gcc -Wall -o sfs_test sfs_test.o sfs_api.o disk_emu.o 
 
+small_test: Small_SFS_Test.o sfs_api.o disk_emu.o
+	gcc -Wall -o SmallTest Small_SFS_Test.o sfs_api.o disk_emu.o
+
+Small_SFS_Test.o: Small_SFS_Test.c sfs_api.h
+	gcc -Wall -c sfs_test.c
+
 sfs_test.o: sfs_test.c sfs_api.h
 	gcc -Wall -c sfs_test.c
 

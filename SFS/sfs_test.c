@@ -73,7 +73,6 @@ main(int argc, char **argv)
     int tmp;
 
     mksfs(1);                     /* Initialize the file system. */
-
     /* First we open two files and attempt to write data to them.
     */
     for (i = 0; i < 2; i++) {

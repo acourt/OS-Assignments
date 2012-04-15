@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sfs_api.h"
+#include "SFS.h"
 
 /* The maximum file name length. We assume that filenames can contain
  * upper-case letters and periods ('.') characters. Feel free to

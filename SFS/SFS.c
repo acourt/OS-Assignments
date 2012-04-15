@@ -12,7 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "SFS.h"
+#include "sfs_api.h"
+#include "disk_emu.h"
 
 // On disk and memory
 typedef struct  {
@@ -177,7 +178,6 @@ void sfs_ls()
 		{
 			char* time = ctime((time_t*)&(directory[i].time));
 			printf("Name: %s\tSize: %d\tLast Modified: %s\n", directory[i].fname, directory[i].size, time);
-			free(time);
 		}
 	}
 }
@@ -246,7 +246,7 @@ int create_file_in_mem(char* name, int* dir_index )
 			printf("Error: Not enough space in the directory\n");
 			return -1;
 		}
-		strncpy(&(directory[*dir_index].fname), name, MAX_FNAME_LENGTH);
+		strncpy(directory[*dir_index].fname, name, MAX_FNAME_LENGTH);
 		directory[*dir_index].FAT_index = block_index;
 		directory[*dir_index].size = 0;
 		directory[*dir_index].time = get_current_time();
@@ -307,23 +307,26 @@ void sfs_fwrite(int fileID, char *buf, int length)
 	int total_length = length;
 	int initial_block_count = get_block_count(fileID);
 	int file_has_new_blocks = 0;
+	int old_write_offset = fd->write_offset;
+	int old_block_offset = get_block_count(fileID);
 	while (length > 0) 
 	{
 		char current_block[BLOCK_SIZE];
-		read_blocks(fd->write_block, 1, current_block);
+		read_blocks(FAT[fd->write_block].start, 1, current_block);
 		
 		int available_space = BLOCK_SIZE - fd->write_offset;
 		
+		// Figure out if the available space is greater than the remaining bytes to write
 		int min = available_space > length ? length : available_space;
 		
 		memcpy(current_block+fd->write_offset , buf+(total_length-length) , min);
 		
-		write_blocks(fd->write_block,1,current_block);
+		write_blocks(FAT[fd->write_block].start,1,current_block);
 		
 		length -= min;
 		
 		// Adjust the write offset
-		fd->write_offset = (fd->write_offset +min )% BLOCK_SIZE;
+		fd->write_offset = (fd->write_offset +min ) % BLOCK_SIZE;
 		
 		if (fd->write_offset == 0) {
 			int next_write_block = FAT[fd->write_block].next;
@@ -338,24 +341,67 @@ void sfs_fwrite(int fileID, char *buf, int length)
 					printf("Error: No more free blocks!!\n");
 					return ;
 				}
+				// Modify the FAT
 				FAT[fd->write_block].next = next_free_block;
+				FAT[next_free_block].start = next_free_block + 3;
+				FAT[next_free_block].next = -1;
 				fd->write_block = next_free_block;
 				file_has_new_blocks = 1;
 			}
 		}
 	}
-	if (file_has_new_blocks) 
+	
+	int current_block_count = get_block_count(fileID);
+	// If the size has changed
+	if (file_has_new_blocks
+		|| (old_block_offset ==  current_block_count && old_write_offset < fd->write_offset))
 	{
-		directory[fileID].size = (get_block_count(fileID) *  BLOCK_SIZE) + fd->write_offset;
+		directory[fileID].size = (current_block_count *  BLOCK_SIZE) + fd->write_offset;
 	}
-	else
-	{
-		
-	}	
+	
+	write_directory_to_disk();
+	write_FAT_to_disk();
+	write_free_list_to_disk();
 }
+
 // read characters from disk into buf
 void sfs_fread(int fileID, char *buf, int length)
 {
+	if (!is_file_open(fileID)) {
+		printf("Error: Tried to read a file without having it opened\n");
+		return;
+	}
+	fd_entry* fd = &file_descriptors[get_fd(fileID)];	
+	int total_length = length;
+	int block_count = get_block_count(fileID);
+	int blocks_read = 0;
+	int read_size = 0;
+	int write_count = 0;
+	
+	while (length > 0)
+	{
+		char current_block[BLOCK_SIZE];
+		read_blocks(FAT[fd->write_block].start, 1, current_block);
+		
+		// Figure out if the available space is greater than the remaining bytes to write
+		int min = BLOCK_SIZE - fd->read_offset > length ? length : BLOCK_SIZE - fd->read_offset;		
+		
+		memcpy(buf+(total_length-length), current_block+fd->write_offset, min);
+				
+		length -= min;
+		
+		fd->read_offset = (fd->read_offset + min) % BLOCK_SIZE;
+		
+		if (fd->read_offset == 0) {
+			int next_read_block = FAT[fd->read_block].next;
+			if (next_read_block == -1) {
+				printf("ERROR: No more blocks\n");
+				return;
+			}
+			fd->read_block = next_read_block;
+		}
+	}
+	
 	
 }
 
@@ -386,9 +432,36 @@ void sfs_fseek(int fileID, int loc)
 int sfs_remove(char *file)
 {
 	// Linear search through the directory
-	int i=0;
-	for (<#initialization#>; <#condition#>; <#increment#>)
-	{
-		<#statements#>
+	int dir_index, file_exists = 0, i;
+	// Linear search through the directory
+	for (i=0; i < MAX_FILES && !file_exists; i++) {
+		if(!strcmp(directory[i].fname, file))
+		{
+			dir_index = i;
+			file_exists = 1;
+		}
 	}
+
+	if (file_exists) {
+		int block_index = directory[dir_index].FAT_index;
+		while (block_index != -1) {
+			free_list[block_index] = 0;
+			block_index = FAT[block_index].next;
+		}
+		
+		// Remove from directory
+		memset(directory+dir_index, 0, sizeof(dir_entry));
+		
+		write_free_list_to_disk();
+		write_directory_to_disk();
+	}
+	return 0;
 }
+
+
+
+
+
+
+
+

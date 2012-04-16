@@ -191,7 +191,7 @@ int get_block_count(int dir_index)
 	int block_count=0;
 	int next_FAT_index = file_descriptors[dir_index].root;
 	while (FAT[next_FAT_index].next != -1) {
-		file_descriptors[dir_index].write_block = next_FAT_index;
+		//file_descriptors[dir_index].write_block = next_FAT_index;
 		next_FAT_index = FAT[next_FAT_index].next;
 		block_count++;
 	}
@@ -327,7 +327,7 @@ void sfs_fwrite(int fileID, char *buf, int length)
 		memcpy(current_block+fd->write_offset , buf+(total_length-length) , min);
 		//printf("%s\n", current_block+fd->write_offset);
 		// Write the information contained in the buffer to the current block
-		write_blocks(FAT[fd->write_block].start  + 3,1,current_block);
+		write_blocks(FAT[fd->write_block].start  + 3, 1,current_block);
 		
 		length -= min;
 		
@@ -386,10 +386,6 @@ void sfs_fread(int fileID, char *buf, int length)
 	}
 	fd_entry* fd = &file_descriptors[get_fd(fileID)];	
 	int total_length = length;
-	int block_count = get_block_count(fileID);
-	int blocks_read = 0;
-	int read_size = 0;
-	int write_count = 0;
 	
 	while (length > 0)
 	{

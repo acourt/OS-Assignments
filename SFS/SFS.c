@@ -394,14 +394,14 @@ void sfs_fread(int fileID, char *buf, int length)
 	while (length > 0)
 	{
 		char current_block[BLOCK_SIZE];
-		printf("FAT[fd->read_block].start = %d\n", FAT[fd->read_block].start);
+		//printf("FAT[fd->read_block].start = %d\n", FAT[fd->read_block].start);
 		read_blocks(FAT[fd->read_block].start + 3, 1, current_block);
-		printf("Got this from the block: %s\n", current_block);
+		//printf("Got this from the block: %s\n", current_block);
 		// Figure out if the available space is greater than the remaining bytes to write
 		int min = BLOCK_SIZE - fd->read_offset > length ? length : BLOCK_SIZE - fd->read_offset;		
 		
 		memcpy(buf+(total_length-length), current_block+fd->read_offset, min);
-		printf("buffer: %s\n", buf+(total_length-length));
+		//printf("buffer: %s\n", buf+(total_length-length));
 		length -= min;
 		
 		fd->read_offset = (fd->read_offset + min) % BLOCK_SIZE;

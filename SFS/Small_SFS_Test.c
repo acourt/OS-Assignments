@@ -41,8 +41,21 @@ static char test_str[] = "A mathematician is a machine for turning coffee into t
 int main()
 {
 	mksfs(1);
+	int chunksize = 10, i;
+	char testbuf[20], buffer[5000];
 	int fd = sfs_fopen("My doc");
+	for (i = 0; i < chunksize; i++) {
+        buffer[i] = (char) i;
+		//printf("%d: Printing character: %c\n",i, buffer[i]);
+    }
+	printf("buffer: %c\n", buffer[1]);
+    sfs_fwrite(fd, buffer, chunksize);
 	
+	sfs_fseek(fd, 0);
+	sfs_fread(fd, testbuf, 10);
+	
+	printf("Retrieved info: %c\n", testbuf[2]);
+	sfs_ls();
 	return 0;
 }
 

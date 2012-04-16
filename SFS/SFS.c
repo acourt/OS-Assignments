@@ -143,7 +143,9 @@ int get_free_dir_index()
 	int i, index = -1, found_free_index = 0;
 	
 	for ( i=0; i < MAX_FILES && !found_free_index; i++) {
+		//printf("Directory name is: %s\n",directory[i].fname);
 		if (dir_entry_is_null(i)) {
+			//printf("Dir entry is null at %d\n",i);
 			found_free_index = 1;
 			index = i;
 		}
@@ -173,6 +175,7 @@ void mksfs(int fresh)
 void sfs_ls()
 {
 	int i=0;
+	// Linear print through the whole directory
 	for (i=0; i < MAX_FILES; i++) {
 		if(!dir_entry_is_null(i))
 		{
@@ -237,6 +240,7 @@ int create_file_in_mem(char* name, int* dir_index )
 	}
 	else
 	{
+		//printf("Free block is %d\n", block_index);
 		// Create the file
 		FAT[block_index].start = block_index;
 		FAT[block_index].next = -1;
@@ -246,10 +250,13 @@ int create_file_in_mem(char* name, int* dir_index )
 			printf("Error: Not enough space in the directory\n");
 			return -1;
 		}
+		//printf("Free dir_index is %d\n", *dir_index);
 		strncpy(directory[*dir_index].fname, name, MAX_FNAME_LENGTH);
 		directory[*dir_index].FAT_index = block_index;
 		directory[*dir_index].size = 0;
 		directory[*dir_index].time = get_current_time();
+		//printf("Printing file name: %s\n", directory[*dir_index].fname);
+
 	}
 	
 	write_directory_to_disk();
@@ -272,12 +279,10 @@ int sfs_fopen(char *name)
 			file_exists = 1;
 		}
 	}
-	
 	if (!file_exists) {
 		create_file_in_mem(name, &dir_index);
 	}
-	dir_index = get_fd(dir_index);
-	
+	dir_index = get_fd(dir_index);	
 	return dir_index;
 }
 
@@ -303,28 +308,31 @@ void sfs_fwrite(int fileID, char *buf, int length)
 		printf("Error: Tried to write to a file without having it opened\n");
 		return;
 	}
-	fd_entry* fd = &file_descriptors[get_fd(fileID)];
+	fd_entry* fd = &file_descriptors[fileID];
 	int total_length = length;
-	int initial_block_count = get_block_count(fileID);
 	int file_has_new_blocks = 0;
 	int old_write_offset = fd->write_offset;
 	int old_block_offset = get_block_count(fileID);
 	while (length > 0) 
 	{
 		char current_block[BLOCK_SIZE];
-		read_blocks(FAT[fd->write_block].start, 1, current_block);
+		read_blocks(FAT[fd->write_block].start + 3, 1, current_block);
 		
 		int available_space = BLOCK_SIZE - fd->write_offset;
 		
 		// Figure out if the available space is greater than the remaining bytes to write
 		int min = available_space > length ? length : available_space;
 		
+		// Copy the information to the buffer
 		memcpy(current_block+fd->write_offset , buf+(total_length-length) , min);
-		
-		write_blocks(FAT[fd->write_block].start,1,current_block);
+		//printf("%s\n", current_block+fd->write_offset);
+		// Write the information contained in the buffer to the current block
+		write_blocks(FAT[fd->write_block].start  + 3,1,current_block);
 		
 		length -= min;
 		
+		/*printf("write_offset = %d\n", fd->write_offset);
+		printf("min = %d\n", min);*/
 		// Adjust the write offset
 		fd->write_offset = (fd->write_offset +min ) % BLOCK_SIZE;
 		
@@ -343,7 +351,7 @@ void sfs_fwrite(int fileID, char *buf, int length)
 				}
 				// Modify the FAT
 				FAT[fd->write_block].next = next_free_block;
-				FAT[next_free_block].start = next_free_block + 3;
+				FAT[next_free_block].start = next_free_block;
 				FAT[next_free_block].next = -1;
 				fd->write_block = next_free_block;
 				file_has_new_blocks = 1;
@@ -353,6 +361,11 @@ void sfs_fwrite(int fileID, char *buf, int length)
 	
 	int current_block_count = get_block_count(fileID);
 	// If the size has changed
+	/*printf("file has new blocks: %d\n", file_has_new_blocks);
+	printf("old_block_offset ==  current_block_count  = %d\n",old_block_offset ==  current_block_count);
+	printf("old_write_offset < fd->write_offset  = %d\n",old_write_offset < fd->write_offset);
+	printf("Size is: %d + %d = %d\n", (current_block_count *  BLOCK_SIZE), fd->write_offset,
+									(current_block_count *  BLOCK_SIZE)+ fd->write_offset);*/
 	if (file_has_new_blocks
 		|| (old_block_offset ==  current_block_count && old_write_offset < fd->write_offset))
 	{
@@ -381,13 +394,14 @@ void sfs_fread(int fileID, char *buf, int length)
 	while (length > 0)
 	{
 		char current_block[BLOCK_SIZE];
-		read_blocks(FAT[fd->write_block].start, 1, current_block);
-		
+		printf("FAT[fd->read_block].start = %d\n", FAT[fd->read_block].start);
+		read_blocks(FAT[fd->read_block].start + 3, 1, current_block);
+		printf("Got this from the block: %s\n", current_block);
 		// Figure out if the available space is greater than the remaining bytes to write
 		int min = BLOCK_SIZE - fd->read_offset > length ? length : BLOCK_SIZE - fd->read_offset;		
 		
-		memcpy(buf+(total_length-length), current_block+fd->write_offset, min);
-				
+		memcpy(buf+(total_length-length), current_block+fd->read_offset, min);
+		printf("buffer: %s\n", buf+(total_length-length));
 		length -= min;
 		
 		fd->read_offset = (fd->read_offset + min) % BLOCK_SIZE;
@@ -401,8 +415,6 @@ void sfs_fread(int fileID, char *buf, int length)
 			fd->read_block = next_read_block;
 		}
 	}
-	
-	
 }
 
 // seek to the location from beginning
@@ -413,7 +425,8 @@ void sfs_fseek(int fileID, int loc)
 	}
 	file_descriptors[fileID].write_offset = loc%BLOCK_SIZE;
 	file_descriptors[fileID].read_offset = loc%BLOCK_SIZE;
-	
+	printf("FileID is at %d\n", fileID);
+	//printf("Seeking1, write_offset is now at: %d\n", file_descriptors[fileID].write_offset);
 	int block_number = loc/BLOCK_SIZE;
 	int current_block_index = file_descriptors[fileID].root;
 	while (block_number != 0) {
@@ -427,6 +440,7 @@ void sfs_fseek(int fileID, int loc)
 	}
 	file_descriptors[fileID].read_block = current_block_index;
 	file_descriptors[fileID].write_block = current_block_index;
+	printf("write_offset at the end of seek: %d\n", file_descriptors[fileID].write_offset);
 }
 // removes a file from the filesystem
 int sfs_remove(char *file)
@@ -441,7 +455,7 @@ int sfs_remove(char *file)
 			file_exists = 1;
 		}
 	}
-
+	
 	if (file_exists) {
 		int block_index = directory[dir_index].FAT_index;
 		while (block_index != -1) {

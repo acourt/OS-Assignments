@@ -180,7 +180,7 @@ void sfs_ls()
 		if(!dir_entry_is_null(i))
 		{
 			char* time = ctime((time_t*)&(directory[i].time));
-			printf("Name: %s\tSize: %d\tLast Modified: %s\n", directory[i].fname, directory[i].size, time);
+			printf("Name: %s\tSize: %d\t\n", directory[i].fname, directory[i].size);
 		}
 	}
 }
@@ -212,11 +212,11 @@ int get_fd(dir_index)
 			next_FAT_index = FAT[next_FAT_index].next;
 		}
 		// Check the write offset
-		file_descriptors[dir_index].write_offset = directory[dir_index].size % BLOCK_SIZE;
+		//file_descriptors[dir_index].write_offset = directory[dir_index].size % BLOCK_SIZE;
 		
 		// Read offsets
-		file_descriptors[dir_index].read_block = file_descriptors[dir_index].root;
-		file_descriptors[dir_index].read_offset = 0;
+		//file_descriptors[dir_index].read_block = file_descriptors[dir_index].root;
+		//file_descriptors[dir_index].read_offset = 0;
 	}
 	else
 	{
@@ -247,7 +247,7 @@ int create_file_in_mem(char* name, int* dir_index )
 		
 		*dir_index = get_free_dir_index();
 		if (*dir_index == -1) {
-			printf("Error: Not enough space in the directory\n");
+			printf("No more space in the directory for more files\n");
 			return -1;
 		}
 		//printf("Free dir_index is %d\n", *dir_index);
@@ -421,7 +421,7 @@ void sfs_fseek(int fileID, int loc)
 	}
 	file_descriptors[fileID].write_offset = loc%BLOCK_SIZE;
 	file_descriptors[fileID].read_offset = loc%BLOCK_SIZE;
-	printf("FileID is at %d\n", fileID);
+	//printf("FileID is at %d\n", fileID);
 	//printf("Seeking1, write_offset is now at: %d\n", file_descriptors[fileID].write_offset);
 	int block_number = loc/BLOCK_SIZE;
 	int current_block_index = file_descriptors[fileID].root;
@@ -436,7 +436,7 @@ void sfs_fseek(int fileID, int loc)
 	}
 	file_descriptors[fileID].read_block = current_block_index;
 	file_descriptors[fileID].write_block = current_block_index;
-	printf("write_offset at the end of seek: %d\n", file_descriptors[fileID].write_offset);
+	//printf("write_offset at the end of seek: %d\n", file_descriptors[fileID].write_offset);
 }
 // removes a file from the filesystem
 int sfs_remove(char *file)

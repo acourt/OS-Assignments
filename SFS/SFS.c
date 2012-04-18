@@ -167,6 +167,9 @@ void mksfs(int fresh)
 	else
 	{
 		init_disk("DISK_FILE.txt", BLOCK_SIZE, DISK_SIZE);
+		load_FAT_from_disk();
+		load_directory_from_disk();
+		load_free_list_from_disk();
 	}
 	memset(file_descriptors, -1, sizeof(fd_entry)*MAX_FILES);
 }

@@ -328,14 +328,11 @@ void sfs_fwrite(int fileID, char *buf, int length)
 		
 		// Copy the information to the buffer
 		memcpy(current_block+fd->write_offset , buf+(total_length-length) , min);
-		//printf("%s\n", current_block+fd->write_offset);
 		// Write the information contained in the buffer to the current block
 		write_blocks(FAT[fd->write_block].start  + 3, 1,current_block);
 		
 		length -= min;
 		
-		/*printf("write_offset = %d\n", fd->write_offset);
-		printf("min = %d\n", min);*/
 		// Adjust the write offset
 		fd->write_offset = (fd->write_offset +min ) % BLOCK_SIZE;
 		
@@ -364,11 +361,6 @@ void sfs_fwrite(int fileID, char *buf, int length)
 	
 	int current_block_count = get_block_count(fileID);
 	// If the size has changed
-	/*printf("file has new blocks: %d\n", file_has_new_blocks);
-	printf("old_block_offset ==  current_block_count  = %d\n",old_block_offset ==  current_block_count);
-	printf("old_write_offset < fd->write_offset  = %d\n",old_write_offset < fd->write_offset);
-	printf("Size is: %d + %d = %d\n", (current_block_count *  BLOCK_SIZE), fd->write_offset,
-									(current_block_count *  BLOCK_SIZE)+ fd->write_offset);*/
 	if (file_has_new_blocks
 		|| (old_block_offset ==  current_block_count && old_write_offset < fd->write_offset))
 	{
@@ -393,14 +385,12 @@ void sfs_fread(int fileID, char *buf, int length)
 	while (length > 0)
 	{
 		char current_block[BLOCK_SIZE];
-		//printf("FAT[fd->read_block].start = %d\n", FAT[fd->read_block].start);
 		read_blocks(FAT[fd->read_block].start + 3, 1, current_block);
-		//printf("Got this from the block: %s\n", current_block);
+		
 		// Figure out if the available space is greater than the remaining bytes to write
 		int min = BLOCK_SIZE - fd->read_offset > length ? length : BLOCK_SIZE - fd->read_offset;		
 		
 		memcpy(buf+(total_length-length), current_block+fd->read_offset, min);
-		//printf("buffer: %s\n", buf+(total_length-length));
 		length -= min;
 		
 		fd->read_offset = (fd->read_offset + min) % BLOCK_SIZE;
